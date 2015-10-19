@@ -2,4 +2,4 @@
 
 Todo List:
 
-- [ ] Automatic GC
+- [x] Automatic GC
