@@ -15,6 +15,14 @@ from douban.common.utils.config import read_config
 from beansdb_tools.tools.backup import get_backup_config
 from beansdbadmin.tools.filelock import FileLock
 
+import logging
+logger = logging.getLogger('gc')
+LOG_FILENAME = '/var/log/beansdb-admin/gc.log'
+LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
+logging.basicConfig(filename=LOG_FILENAME,
+                    level=logging.INFO,
+                    format=LOG_FORMAT)
+
 SQLITE_DB_PATH = '/data/beansdbadmin/beansdb-gc.db'
 DISK_URL_PATTERN = 'http://%s:7100/disks'
 BUCKET_URL_PATTERN = 'http://%s:7100/buckets'
@@ -153,7 +161,7 @@ def get_disks_info(server):
     try:
         return get_url_data(url)['disks']
     except Exception as e:
-        print '[ERROR] %s: %s' % (url, e)
+        logger.error('%s: %s' % (url, e))
         return {}
 
 
@@ -249,13 +257,13 @@ def gc_bucket(server, bucket, start_id, stop_id):
 def beansdb_remote_cmd(server, cmd, timeout=None):
     port = 7900  # only for doubandb
     t = telnetlib.Telnet(server, port)
-    print [cmd]
+    logger.info('%s' % [cmd])
     t.write('%s\n' % cmd)
     out = t.read_until('\n', timeout=timeout)
     t.write('quit\n')
     t.close()
     rs = out.strip('\r\n')
-    print rs
+    logger.info(rs)
     return rs
 
 
