@@ -13,7 +13,7 @@ from pprint import pprint
 
 from douban.common.utils.config import read_config
 from beansdb_tools.tools.backup import get_backup_config
-from beansdbadmin.filelock import FileLock
+from beansdbadmin.tools.filelock import FileLock
 
 SQLITE_DB_PATH = '/data/beansdbadmin/beansdb-gc.db'
 DISK_URL_PATTERN = 'http://%s:7100/disks'
@@ -143,7 +143,7 @@ def update_gc_status(gc_record):
     for id, server, bucket, disk in running_buckets_info:
         gc_status = beansdb_remote_cmd(server, 'optimize_stat', 2)
         if gc_status == 'success':
-            stop_time = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+            stop_time = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
             free_size_after = get_disks_info(server)[disk]['free_size']
             gc_record.update_status(id, 'done', stop_time, free_size_after)
 
@@ -172,7 +172,7 @@ def gc_disk(gc_record, disk_info, debug=False):
     server, disk, buckets, free_size = disk_info
     url = BUCKET_URL_PATTERN % server
     buckets_info = get_url_data(url)['buckets']
-    time_str = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     for bucket_id in buckets:
         bucket_id_hex = '%x' % bucket_id
