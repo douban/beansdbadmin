@@ -117,33 +117,41 @@ def main():
             '-u', '--update-status', action='store_true',
             help="Update the status of gc."
             )
+    parser.add_argument(
+            '-m', '--manual-operation',
+            help='Manual specify gc arguments (server bucket start_id stop_id)'
+            )
     args = parser.parse_args()
 
     gc_record = GCRecord(SQLITE_DB_PATH)
+    doubandb_config = read_config('shire-online', 'beansdb')
+    server_ports = doubandb_config['servers']
+    servers = [x.split(':')[0] for x in server_ports]
 
     if args.init:
         gc_record.create_table()
+        return
 
-    elif args.query:
+    if args.query:
         pprint(gc_record.get_all_record())
+        return
 
-    elif args.update_status:
-        with FileLock(SQLITE_DB_PATH, timeout=10):
+    with FileLock(SQLITE_DB_PATH, timeout=10):
+        if args.update_status:
             update_gc_status(gc_record)
+            return
 
-    else:
-        with FileLock(SQLITE_DB_PATH, timeout=10):
-            doubandb_config = read_config('shire-online', 'beansdb')
-            server_ports = doubandb_config['servers']
-            servers = [x.split(':')[0] for x in server_ports]
+        if gc_record.get_running_buckets_info() and not args.debug:
+            # there is another gc running
+            return
 
-            running_buckets_info = gc_record.get_running_buckets_info()
-            if running_buckets_info and not args.debug:
-                # there is another gc running
-                return
-            for disk_info in get_disks_need_gc(servers):
-                if gc_disk(gc_record, disk_info, debug=args.debug):
-                    break
+        if args.manual_operation:
+            manual_gc(gc_record, args.manual_operation, servers)
+            return
+
+        for disk_info in get_disks_need_gc(servers):
+            if gc_disk(gc_record, disk_info, debug=args.debug):
+                break
 
 
 def update_gc_status(gc_record):
@@ -154,6 +162,24 @@ def update_gc_status(gc_record):
             stop_time = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
             free_size_after = get_disks_info(server)[disk]['free_size']
             gc_record.update_status(id, 'done', stop_time, free_size_after)
+
+
+def manual_gc(gc_record, manual_operation, servers):
+    server, bucket_id_hex, start_id, stop_id = manual_operation.split()
+    if server not in servers:
+        print 'wrong server name: %s' % server
+        return
+    bucket_id = int(bucket_id_hex, 16)
+    disks_info = get_disks_info(server)
+    for disk, v in disks_info.iteritems():
+        if bucket_id in v['buckets']:
+            break
+    assert disk, "wrong gc arguments: %s" % manual_operation
+    time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    gc_record.add_record(
+        time_str, server, disk, v['free_size'],
+        bucket_id_hex, start_id, stop_id)
+    gc_bucket(server, bucket_id_hex, start_id, stop_id)
 
 
 def get_disks_info(server):
