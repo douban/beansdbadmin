@@ -119,7 +119,8 @@ def main():
             )
     parser.add_argument(
             '-m', '--manual-operation',
-            help='Manual specify gc arguments (server bucket start_id stop_id)'
+            help=('Manual specify gc arguments "server bucket start_id stop_id" '
+                  '(e.g. `gc.py -m "rosa2e 2 140 145"`).')
             )
     args = parser.parse_args()
 
