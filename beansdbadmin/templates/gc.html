@@ -1,33 +1,46 @@
 {% extends 'layout.html' %}
 
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/bootstrap-sortable.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block body %}
 
 <div class="container">
   <div class="row">
-    <table class="table">
+    <table class="table table-bordered table-striped sortable">
       <h4>GC Records</h4>
-      <tr>
-        <th><center>ID</center></th>
-        <th><center>START_TIME</center></th>
-        <th><center>STOP_TIME</center></th>
-        <th><center>BUCKET</center></th>
-        <th><center>SERVER</center></th>
-        <th><center>DISK</center></th>
-        <th><center>FREE_SIZE_BEFORE</center></th>
-        <th><center>FREE_SIZE_AFTER</center></th>
-        <th><center>START_ID</center></th>
-        <th><center>STOP_ID</center></th>
-        <th><center>STATUS</center></th>
-      </tr>
-      {% for record in gc_records %}
-      <tr>
-        {% for item in record %}
-        <td>{{ item }} </td>
+      <thead>
+        <tr>
+          <th><center>ID</center></th>
+          <th><center>START_TIME</center></th>
+          <th><center>STOP_TIME</center></th>
+          <th><center>BUCKET</center></th>
+          <th><center>SERVER</center></th>
+          <th><center>DISK</center></th>
+          <th><center>FREE_SIZE_BEFORE</center></th>
+          <th><center>FREE_SIZE_AFTER</center></th>
+          <th><center>START_ID</center></th>
+          <th><center>STOP_ID</center></th>
+          <th><center>STATUS</center></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in gc_records %}
+        <tr>
+          {% for item in record %}
+          <td>{{ item }} </td>
+          {% endfor %}
+        </tr>
         {% endfor %}
-      </tr>
-      {% endfor %}
+      </tbody>
     </table>
   </div>
 </div><!-- /.container -->
 
+{% endblock %}
+
+{% block footer %}
+<script src="{{ url_for('static', filename='js/bootstrap-sortable.js') }}"></script>
+<script src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
 {% endblock %}
