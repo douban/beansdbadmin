@@ -7,9 +7,11 @@ setup(
     author='zhuzhaolong,yangxiufeng',
     author_email='zhuzhaolong@douban.com,yangxiufeng@douban.com',
     url='http://github.intra.douban.com/coresys/beansdbadmin',
-    packages=['beansdbadmin'],
-    entry_points = """
-    [console_scripts]
-    beansdbadmin-agent=beansdbadmin.agent:main
-    """
+    packages=['beansdbadmin', 'beansdbadmin.tools'],
+    entry_points = {
+        'console_scripts': [
+            'beansdbadmin-gc = beansdbadmin.tools.gc:main',
+            'beansdbadmin-web = beansdbadmin.index:main',
+        ]
+    }
 )

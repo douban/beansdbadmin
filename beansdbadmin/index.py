@@ -1,8 +1,8 @@
 # coding: utf-8
 from flask import Flask
-from flask import Blueprint, render_template as tmpl
+from flask import render_template as tmpl
 
-from tools.gc import GCRecord, SQLITE_DB_PATH
+from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH
 
 app = Flask(__name__)
 
