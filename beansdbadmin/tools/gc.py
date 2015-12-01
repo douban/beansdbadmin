@@ -286,7 +286,7 @@ def gc_bucket(server, bucket, start_id, stop_id):
 def beansdb_remote_cmd(server, cmd, timeout=None):
     port = 7900  # only for doubandb
     t = telnetlib.Telnet(server, port)
-    logger.info('%s', [cmd])
+    logger.info('server=%s, cmd=[%s]', server, cmd)
     t.write('%s\n' % cmd)
     out = t.read_until('\n', timeout=timeout)
     t.write('quit\n')
