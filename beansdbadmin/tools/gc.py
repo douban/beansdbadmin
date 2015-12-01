@@ -13,6 +13,7 @@ from pprint import pprint
 from douban.common.utils.config import read_config
 from beansdb_tools.tools.backup import get_backup_config
 from beansdbadmin.tools.filelock import FileLock
+from beansdbadmin.config import IGNORED_SERVERS
 
 import logging
 logger = logging.getLogger('gc')
@@ -204,6 +205,8 @@ def get_disks_need_gc(beansdb_servers):
 
 def gc_disk(gc_record, disk_info, debug=False):
     server, disk, buckets, free_size = disk_info
+    if server in IGNORED_SERVERS:
+        return False
     url = BUCKET_URL_PATTERN % server
     buckets_info = get_url_data(url)['buckets']
     time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -283,7 +286,7 @@ def gc_bucket(server, bucket, start_id, stop_id):
 def beansdb_remote_cmd(server, cmd, timeout=None):
     port = 7900  # only for doubandb
     t = telnetlib.Telnet(server, port)
-    logger.info('%s' % [cmd])
+    logger.info('%s', [cmd])
     t.write('%s\n' % cmd)
     out = t.read_until('\n', timeout=timeout)
     t.write('quit\n')
