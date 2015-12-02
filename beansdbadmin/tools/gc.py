@@ -13,6 +13,7 @@ from pprint import pprint
 from douban.common.utils.config import read_config
 from beansdb_tools.tools.backup import get_backup_config
 from beansdbadmin.tools.filelock import FileLock
+from beansdbadmin.config import IGNORED_SERVERS
 
 import logging
 logger = logging.getLogger('gc')
@@ -26,7 +27,7 @@ SQLITE_DB_PATH = '/data/beansdbadmin/beansdb-gc.db'
 DISK_URL_PATTERN = 'http://%s:7100/disks'
 BUCKET_URL_PATTERN = 'http://%s:7100/buckets'
 DISK_FREE_SIZE_THRESHHOLD_MAX = 57000000000
-DISK_FREE_SIZE_THRESHHOLD_MIN = 35000000000
+DISK_FREE_SIZE_THRESHHOLD_MIN = 0
 GC_DATA_NUMBER_MIN = 5
 
 
@@ -121,6 +122,10 @@ def main():
             help=('Manual specify gc arguments "server bucket start_id stop_id" '
                   '(e.g. `gc.py -m "rosa2e 2 140 145"`).')
             )
+    parser.add_argument(
+            '-f', '--fail-id', type=int,
+            help=('Update the status of failed record.')
+            )
     args = parser.parse_args()
 
     gc_record = GCRecord(SQLITE_DB_PATH)
@@ -137,6 +142,9 @@ def main():
         return
 
     with FileLock(SQLITE_DB_PATH, timeout=10):
+        if args.fail_id:
+            mark_fail(gc_record, args.fail_id)
+
         if args.update_status:
             update_gc_status(gc_record)
             return
@@ -152,6 +160,10 @@ def main():
         for disk_info in get_disks_need_gc(servers):
             if gc_disk(gc_record, disk_info, debug=args.debug):
                 break
+
+
+def mark_fail(gc_record, id):
+    gc_record.update_status(id, 'fail', 'none', 0)
 
 
 def update_gc_status(gc_record):
@@ -171,6 +183,8 @@ def manual_gc(gc_record, manual_operation, servers):
         return
     bucket_id = int(bucket_id_hex, 16)
     disks_info = get_disks_info(server)
+    disk = None
+    v = None
     for disk, v in disks_info.iteritems():
         if bucket_id in v['buckets']:
             break
@@ -187,14 +201,13 @@ def get_disks_info(server):
     try:
         return get_url_data(url)['disks']
     except Exception as e:
-        logger.error('%s: %s' % (url, e))
+        logger.error('%s: %s', url, e)
         return {}
 
 
 def get_disks_need_gc(beansdb_servers):
     rs = []
     for server in beansdb_servers:
-        url = DISK_URL_PATTERN % server
         disks = get_disks_info(server)
         for d, v in disks.iteritems():
             if DISK_FREE_SIZE_THRESHHOLD_MIN < v['free_size'] < DISK_FREE_SIZE_THRESHHOLD_MAX:
@@ -204,6 +217,8 @@ def get_disks_need_gc(beansdb_servers):
 
 def gc_disk(gc_record, disk_info, debug=False):
     server, disk, buckets, free_size = disk_info
+    if server in IGNORED_SERVERS:
+        return False
     url = BUCKET_URL_PATTERN % server
     buckets_info = get_url_data(url)['buckets']
     time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -282,8 +297,8 @@ def gc_bucket(server, bucket, start_id, stop_id):
 
 def beansdb_remote_cmd(server, cmd, timeout=None):
     port = 7900  # only for doubandb
+    logger.info('server=%s, cmd=[%s]', server, cmd)
     t = telnetlib.Telnet(server, port)
-    logger.info('%s' % [cmd])
     t.write('%s\n' % cmd)
     out = t.read_until('\n', timeout=timeout)
     t.write('quit\n')
