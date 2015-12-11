@@ -3,6 +3,9 @@ from flask import Flask
 from flask import render_template as tmpl
 
 from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH
+from beansdbadmin.tools.server import (
+    get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
+    )
 
 app = Flask(__name__)
 
@@ -19,6 +22,21 @@ def gc():
     records = gc_record.get_all_record()
     return tmpl('gc.html', gc_records=sorted(records, reverse=True))
 
+@app.route('/servers/')
+def servers():
+    server_infos = get_all_server_stats()
+    ss = [s.summary_server() for s in server_infos]
+    return tmpl('servers.html', servers=ss)
+
+@app.route('/buckets/')
+def buckets():
+    server_buckets = get_all_buckets_stats(1)
+    return tmpl('buckets.html', server_buckets=server_buckets)
+
+@app.route('/sync/')
+def sync():
+    bs = get_all_buckets_key_counts(256)
+    return tmpl('sync.html', buckets=bs)
 
 def main():
     import argparse

@@ -10,8 +10,9 @@ import datetime
 import telnetlib
 from pprint import pprint
 
-from douban.common.utils.config import read_config
 from beansdb_tools.tools.backup import get_backup_config
+from beansdb_tools.sa.cmdb import get_hosts_by_tag
+
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin.config import IGNORED_SERVERS
 
@@ -129,8 +130,7 @@ def main():
     args = parser.parse_args()
 
     gc_record = GCRecord(SQLITE_DB_PATH)
-    doubandb_config = read_config('shire-online', 'beansdb')
-    server_ports = doubandb_config['servers']
+    server_ports = get_hosts_by_tag("gobeansdb_servers")
     servers = [x.split(':')[0] for x in server_ports]
 
     if args.init:
