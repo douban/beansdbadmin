@@ -1,57 +1,58 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os
-import urllib
-import json
 import time
 import sqlite3
-import datetime
-import telnetlib
 from pprint import pprint
 
-from beansdb_tools.tools.backup import get_backup_config
 from beansdb_tools.sa.cmdb import get_hosts_by_tag
+from beansdb_tools.core.server_info import (
+    get_http, get_bucket_all
+)
 
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin.config import IGNORED_SERVERS
-
 import logging
+
 logger = logging.getLogger('gc')
-LOG_FILENAME = '/var/log/beansdb-admin/gc.log'
 LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
-logging.basicConfig(filename=LOG_FILENAME,
-                    level=logging.INFO,
-                    format=LOG_FORMAT)
+import getpass
+if getpass.getuser() == "beansdb":
+    LOG_FILENAME = '/var/log/beansdb-admin/gc.log'
+    SQLITE_DB_PATH = '/data/beansdbadmin/gobeansdb-gc.db'
+    logging.basicConfig(filename=LOG_FILENAME,
+                        level=logging.INFO,
+                        format=LOG_FORMAT)
+else:
+    SQLITE_DB_PATH = './gobeansdb-gc.db'
+    logging.basicConfig(level=logging.DEBUG,
+                        format=LOG_FORMAT)
 
-SQLITE_DB_PATH = '/data/beansdbadmin/beansdb-gc.db'
-DISK_URL_PATTERN = 'http://%s:7100/disks'
-BUCKET_URL_PATTERN = 'http://%s:7100/buckets'
-DISK_FREE_SIZE_THRESHHOLD_MAX = 57000000000
-DISK_FREE_SIZE_THRESHHOLD_MIN = 0
-GC_DATA_NUMBER_MIN = 5
+
+DISK_FREE_SIZE_THRESHHOLD_MAX = (40<<30)
 
 
-### gc record database
+# gc record database
 
 class GCRecord(object):
+
     def __init__(self, path):
         self.conn = sqlite3.connect(path)
         self.cursor = self.conn.cursor()
 
     def create_table(self):
         self.cursor.execute(
-        """CREATE TABLE gc_record (
+            """CREATE TABLE gc_record (
             id INTEGER PRIMARY KEY,
+            server TEXT,
+            bucket TEXT,
             start_time TEXT,
             stop_time TEXT,
-            bucket TEXT,
-            server TEXT,
-            disk TEXT,
-            free_size_before INTEGER,
-            free_size_after INTEGER,
             start_id INTEGER,
             stop_id INTEGER,
+            curr_id INTEGER,
+            size_released INTEGER,
+            size_broken INTEGER,
             status TEXT
            )""")
         self.conn.commit()
@@ -59,255 +60,267 @@ class GCRecord(object):
     def close(self):
         self.conn.close()
 
-    def add_record(self, start_time, server, disk, free_size, bucket, start_id, stop_id):
+    def add(self,
+            server, bucket,
+            start_time, stop_time,
+            start_id, stop_id, curr_id,
+            size_released, size_broken,
+            status):
+
+        logging.debug("insert %s %s %s", server, bucket, start_time)
         self.cursor.execute(
-        """INSERT INTO gc_record (start_time, bucket, server, disk, free_size_before,
-                                  start_id, stop_id, status)
-           VALUES (:start_time, :bucket, :server, :disk, :free_size_before,
-                   :start_id, :stop_id, 'running')
+            """INSERT INTO gc_record (server, bucket,
+                                 start_time, stop_time,
+                                 start_id, stop_id, curr_id,
+                                 size_released, size_broken,
+                                 status)
+           VALUES (:server, :bucket,
+                  :start_time, :stop_time,
+                  :start_id, :stop_id, :curr_id,
+                  :size_released, :size_broken,
+                  :status)
         """,
-        {'start_time': start_time, 'server': server, 'bucket': bucket,
-         'disk': disk, 'free_size_before': free_size,
-         'start_id': start_id, 'stop_id': stop_id}
+            {'server': server, 'bucket': bucket,
+             'start_time': start_time, 'stop_time': stop_time,
+             'start_id': start_id, 'stop_id': stop_id, 'curr_id': curr_id,
+             'size_released': size_released, 'size_broken': size_broken,
+             'status': status}
         )
         self.conn.commit()
 
-    def update_status(self, id, status, stop_time, free_size_after):
+    def update(self, id, stop_time, curr_id, size_released, size_broken, status):
+        logging.debug("update_rec %s %s", id, status)
         self.cursor.execute(
-        """UPDATE gc_record SET status = :status,
+            """UPDATE gc_record SET status = :status,
                                 stop_time = :stop_time,
-                                free_size_after = :free_size_after
+                                curr_id = :curr_id,
+                                size_released = :size_released,
+                                size_broken = :size_broken
            WHERE id = :id
         """,
-        {'status': status, 'id': id, 'stop_time': stop_time,
-         'free_size_after': free_size_after}
+            {'status': status, 'id': id, 'stop_time': stop_time, 'curr_id': curr_id,
+             'size_released': size_released, 'size_broken': size_broken}
         )
         self.conn.commit()
 
-    def get_running_buckets_info(self):
+    def update_status(self, id, status):
+        logging.debug("update status %s %s", id, status)
+        stop_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         self.cursor.execute(
-        "SELECT id, server, bucket, disk FROM gc_record WHERE status = 'running'"
+            """UPDATE gc_record SET status = :status,
+                                stop_time = :stop_time
+           WHERE id = :id
+        """,
+            {'status': status, 'id': id, 'stop_time': stop_time}
+        )
+        self.conn.commit()
+
+    def get_all(self, num=256*3*2):
+        self.cursor.execute(
+            "SELECT * FROM gc_record"
         )
         return self.cursor.fetchall()
 
-    def get_all_record(self):
-        self.cursor.execute(
-        "SELECT * FROM gc_record"
-        )
-        return self.cursor.fetchall()
-
-
-### gc
+def get_servers(exclude):
+    exclude.extend(["chubb2", "chubb3"])
+    server_ports = get_hosts_by_tag("gobeansdb_servers")
+    servers = [x.split(':')[0] for x in server_ports]
+    servers = [s for s in servers if s not in exclude]
+    return servers
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
-            '-d', '--debug', action='store_true',
-            help="Debug mode, send gc cmd to terminal."
-            )
+        '-d', '--debug', action='store_true',
+        help="Debug mode, send gc cmd to terminal."
+    )
     parser.add_argument(
-            '-i', '--init', action='store_true',
-            help="Init database."
-            )
+        '-i', '--init', action='store_true',
+        help="Init database."
+    )
     parser.add_argument(
-            '-q', '--query', action='store_true',
-            help="Query the running buckets."
-            )
+        '-q', '--query', action='store_true',
+        help="Query the running buckets."
+    )
     parser.add_argument(
-            '-u', '--update-status', action='store_true',
-            help="Update the status of gc."
-            )
-    parser.add_argument(
-            '-m', '--manual-operation',
-            help=('Manual specify gc arguments "server bucket start_id stop_id" '
-                  '(e.g. `gc.py -m "rosa2e 2 140 145"`).')
-            )
-    parser.add_argument(
-            '-f', '--fail-id', type=int,
-            help=('Update the status of failed record.')
-            )
+        '-u', '--update-status', action='store_true',
+        help="Update the status of gc."
+    )
     args = parser.parse_args()
 
     gc_record = GCRecord(SQLITE_DB_PATH)
-    server_ports = get_hosts_by_tag("gobeansdb_servers")
-    servers = [x.split(':')[0] for x in server_ports]
-
     if args.init:
         gc_record.create_table()
         return
 
     if args.query:
-        pprint(gc_record.get_all_record())
+        pprint(gc_record.get_all())
         return
 
-    with FileLock(SQLITE_DB_PATH, timeout=10):
-        if args.fail_id:
-            mark_fail(gc_record, args.fail_id)
-
-        if args.update_status:
+    if args.update_status:
+        with FileLock(SQLITE_DB_PATH, timeout=10):
             update_gc_status(gc_record)
-            return
-
-        if gc_record.get_running_buckets_info() and not args.debug:
-            # there is another gc running
-            return
-
-        if args.manual_operation:
-            manual_gc(gc_record, args.manual_operation, servers)
-            return
-
-        for disk_info in get_disks_need_gc(servers):
-            if gc_disk(gc_record, disk_info, debug=args.debug):
-                break
-
-
-def mark_fail(gc_record, id):
-    gc_record.update_status(id, 'fail', 'none', 0)
-
-
-def update_gc_status(gc_record):
-    running_buckets_info = gc_record.get_running_buckets_info()
-    for id, server, bucket, disk in running_buckets_info:
-        gc_status = beansdb_remote_cmd(server, 'optimize_stat', 2)
-        if gc_status == 'success':
-            stop_time = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-            free_size_after = get_disks_info(server)[disk]['free_size']
-            gc_record.update_status(id, 'done', stop_time, free_size_after)
-
-
-def manual_gc(gc_record, manual_operation, servers):
-    server, bucket_id_hex, start_id, stop_id = manual_operation.split()
-    if server not in servers:
-        print 'wrong server name: %s' % server
         return
-    bucket_id = int(bucket_id_hex, 16)
-    disks_info = get_disks_info(server)
-    disk = None
-    v = None
-    for disk, v in disks_info.iteritems():
-        if bucket_id in v['buckets']:
-            break
-    assert disk, "wrong gc arguments: %s" % manual_operation
-    time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-    gc_record.add_record(
-        time_str, server, disk, v['free_size'],
-        bucket_id_hex, start_id, stop_id)
-    gc_bucket(server, bucket_id_hex, start_id, stop_id)
+
+    gc_all_buckets(args.debug)
 
 
-def get_disks_info(server):
-    url = DISK_URL_PATTERN % server
-    try:
-        return get_url_data(url)['disks']
-    except Exception as e:
-        logger.error('%s: %s', url, e)
-        return {}
+def gc_all_buckets(servers, debug=False):
+    servers = get_servers(IGNORED_SERVERS)
+    buckets = []
+    for s in servers:
+        for bkt in get_bucket_all(s):
+            bkt_id = bkt["ID"]
+            gcing = (bkt["HintState"] >= 4)
+            if gcing and not debug:
+                return
+            #lastgc = bkt["LastGC"]
+            du = bkt["DU"]
+            buckets.append((s, bkt_id, bkt, du))
+    buckets.sort(key=lambda x: x[-1], reverse=True)
+    bkt = buckets[0]
+    gc_bucket(bkt[0], bkt[1], debug)
 
 
-def get_disks_need_gc(beansdb_servers):
-    rs = []
-    for server in beansdb_servers:
-        disks = get_disks_info(server)
-        for d, v in disks.iteritems():
-            if DISK_FREE_SIZE_THRESHHOLD_MIN < v['free_size'] < DISK_FREE_SIZE_THRESHHOLD_MAX:
-                rs.append((server, d, v['buckets'], v['free_size']))
-    return sorted(rs, key=lambda x: x[-1])
-
-
-def gc_disk(gc_record, disk_info, debug=False):
-    server, disk, buckets, free_size = disk_info
-    if server in IGNORED_SERVERS:
-        return False
-    url = BUCKET_URL_PATTERN % server
-    buckets_info = get_url_data(url)['buckets']
-    time_str = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-
-    for bucket_id in buckets:
-        bucket_id_hex = '%x' % bucket_id
-        bucket_info = buckets_info[str(bucket_id)]
-        start_id, stop_id = get_gc_range(server, bucket_info, bucket_id_hex)
-        if (stop_id - start_id) >= GC_DATA_NUMBER_MIN:
-            if debug:
-                print server, disk, free_size, bucket_id_hex, start_id, stop_id
-                return False
-            else:
-                gc_record.add_record(
-                    time_str, server, disk, free_size,
-                    bucket_id_hex, start_id, stop_id)
-                gc_bucket(server, bucket_id_hex, start_id, stop_id)
-                return True
-    return False
-
-
-def get_url_data(url):
-    content = urllib.urlopen(url).read()
-    return json.loads(content)
-
-
-def get_gc_range(server, bucket_info, bucket):
-    bucket_info = sorted(bucket_info, reverse=True)
-    start_id = None
-    stop_id = None
-
-    for path, size, mtime in bucket_info:
-        if is_data_need_gc(server, bucket, size, mtime):
-            file_id = get_data_file_id(path)
-            stop_id = stop_id or file_id
-            start_id = file_id
+def get_status(gc):
+    status = gc["Err"]
+    curr_id = gc["Src"]
+    stop_id = gc["End"]
+    if not status:
+        if gc["Running"]:
+            status = "running"
+        elif curr_id > stop_id:
+            status = "success"
         else:
-            if start_id is None:
-                continue
-            else:
-                break
-
-    return start_id - 1, stop_id
+            status = "abort"
+    return status
 
 
-def is_data_need_gc(server, bucket, size, mtime):
-    MIN_DATA_SIZE_NOT_GC = 4000000000
-    backup_server = get_backup_server(bucket)
-    size_flag = size >= MIN_DATA_SIZE_NOT_GC
+def update_rec(db, bid, gc):
+    db.update(
+        bid,
+        gc["EndTS"][:19],
+        gc["Src"],
+        gc["SizeReleased"],
+        gc["SizeBroken"],
+        get_status(gc),
+    )
 
-    today = datetime.date.today()
-    days_ago = today - datetime.timedelta(days=60)
-    min_ts = time.mktime(days_ago.timetuple())
-    today_ts = time.mktime(today.timetuple())
-    if backup_server == server:
-        mtime_flag = (min_ts <= mtime <= today_ts)
+
+def insert_rec(db, server, bucket, gc):
+    db.add(
+        server,
+        bucket,
+        gc["BeginTS"][:19],
+        gc["EndTS"][:19],
+        gc["Begin"],
+        gc["End"],
+        gc["Src"],
+        gc["SizeReleased"],
+        gc["SizeBroken"],
+        get_status(gc),
+    )
+
+
+def update_gc_status(db):
+    servers = get_servers([])
+    indb = get_most_recent_for_buckets(db)
+    online = get_gc_stats_online(servers)
+    #pprint(indb)
+    #pprint(online)
+
+    for bkt, old in indb.items():
+        if bkt not in online:
+            db.update_status(old[0], "lost")
+
+    for bkt, new in online.items():
+        old = indb.get(bkt)
+        if old is None:
+            insert_rec(db, bkt[0], bkt[1], new)
+        elif old[3] != new["BeginTS"][:19]:
+            if old[-1] == "running":
+                db.update_record_status(old[0], "coverted")
+            insert_rec(db, bkt[0], bkt[1], new)
+        else:
+            if old[-1] == "running":
+                update_rec(db, old[0], new)
+
+
+def get_most_recent_for_buckets(db):
+    records = db.get_all()
+    records.sort()
+    buckets = dict()
+    for r in records:
+        key = (r[1], int(r[2]))  # (server, bucket id)
+        buckets[key] = r
+    return buckets
+
+
+def get_gc_stats_online(servers):
+    buckets = dict()
+    for s in servers:
+        try:
+            for bkt in get_bucket_all(s):
+                bkt_id = bkt["ID"]
+                lastgc = bkt["LastGC"]
+                if lastgc:
+                    buckets[(s, bkt_id)] = lastgc
+        except:
+            pass
+    return buckets
+
+
+def gc_bucket(server, bucket, debug=True):
+    if debug:
+        print "pretend gc %s %s" % (server, bucket)
+        res = get_http(server, "/gc/%s" % bucket)
+        print res
+        return
+    res = get_http(server, "/gc/%s?run=true" % bucket)
+    _, _, ok = parse_gc_resp(res)
+    if not ok:
+        logging.error("gc %s %s: %s", server, bucket, res)
     else:
-        mtime_flag = (min_ts <= mtime)
-
-    return (size_flag and mtime_flag)
+        logging.info("gc %s %s: %s", server, bucket, res)
 
 
-def get_data_file_id(path):
-    return int(os.path.basename(path).split('.')[0])
+def get_sentence(s, key):
+    left = s.find(key)
+    if left < 0:
+        return -1
+    s = s[left + len(key):]
+    right = s.find(",")
+    if right < 0:
+        return
+    try:
+        n = int(s[:right])
+        return n
+    except:
+        return -3
 
 
-def get_backup_server(bucket):
-    return get_backup_config(cluster='db').get('buckets', bucket)
+def parse_gc_resp(resp):
+    err = resp.find("err")
+    start = get_sentence(resp, "start")
+    end = get_sentence(resp, "end")
+    ok = (err < 0 and start >= 0 and end >= start)
+    return start, end, ok
 
 
-def gc_bucket(server, bucket, start_id, stop_id):
-    cmd = 'gc @%s %s %s' % (bucket, start_id, stop_id)
-    rs = beansdb_remote_cmd(server, str(cmd))
-    assert rs == 'OK'
-
-
-def beansdb_remote_cmd(server, cmd, timeout=None):
-    port = 7900  # only for doubandb
-    logger.info('server=%s, cmd=[%s]', server, cmd)
-    t = telnetlib.Telnet(server, port)
-    t.write('%s\n' % cmd)
-    out = t.read_until('\n', timeout=timeout)
-    t.write('quit\n')
-    t.close()
-    rs = out.strip('\r\n')
-    logger.info(rs)
-    return rs
-
+def test_parse_gc_resp():
+    success = "<a href='/bucket/2'> /bucket/2 </a> <p/><p/> bucket 2, start 197, end 201, merge false, pretend false <p/>"
+    err = "<p> err : already running </p><a href='/gc/2'> 2 </a> <p/>"
+    r = parse_gc_resp(success)
+    if r != (197, 201, True):
+        print r
+        return
+    r = parse_gc_resp(err)
+    if r != (-1, -1, False):
+        print r
+        return
+    print "ok"
 
 if __name__ == '__main__':
+    # test_parse_gc_resp()
     main()
-
