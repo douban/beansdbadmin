@@ -18,7 +18,7 @@ backup_servers = ["chubb2", "chubb3"]
 
 def getprimaries():
     hosts = get_hosts_by_tag("gobeansdb_servers")
-    return [host for host in hosts if host not in backup_servers] + ["rosa4h"]
+    return [host for host in hosts if host not in backup_servers] # + ["rosa4h"]
 
 def get_all_server_stats():
     sis = [ServerInfo(host) for host in getprimaries()]
