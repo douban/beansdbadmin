@@ -8,34 +8,29 @@
 
 <div class="container">
   <div class="row">
-    <table class="table table-bordered table-striped sortable">
+    <table class="table table-bordered table-striped sortable" >
       <h4>buckets </h4>
       <thead>
         <tr>
-          <th><center>RANK</center></th>
+          <th><center>ADDR</center></th>
           <th><center>BUCKET</center></th>
-          <th><center>MAX DIFF</center></th>
-          <th><center>SERVERS</center></th>
-          <th><center>BACKUPS</center></th>
+          <th><center>DU</center></th>
+          <th><center>CHUNK</center></th>
+          <th><center>OFFSET</center></th>
+          <th><center>NEXTGC</center></th>
+          <th><center>HINT STATE</center></th>
         </tr>
       </thead>
       <tbody>
-        {% for bkt in buckets %}
-        <tr>
-          <td align="right">{{ bkt.rank }} </td>
-          <td align="right">{{ bkt.bucket_id_str }} </td>
-          <td align="right">{{ bkt.max_diff }} </td>
-          <td align="right">
-            {% for s in bkt.servers %}
-               <li>{{s[0]}} : {{s[1]}} </li>
+        {% for buckets in server_buckets %}
+          {% for bucket in buckets %}
+            <tr>
+            <td align="right">  <a href="{{ bucket[1] }}" > {{ bucket[0] }} </a>  </td>
+            {% for item in bucket[2:] %}
+             <td align="right">{{ item }} </td>
             {% endfor %}
-           </td>
-           <td align="right">
-            {% for s in bkt.backups %}
-               <li>{{s[0]}} : {{s[1]}} </li>
-            {% endfor %}
-           </td>
-        </tr>
+            </tr>
+          {% endfor %}
         {% endfor %}
       </tbody>
     </table>

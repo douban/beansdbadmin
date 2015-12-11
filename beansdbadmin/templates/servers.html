@@ -9,7 +9,7 @@
 <div class="container">
   <div class="row">
     <table class="table table-bordered table-striped sortable">
-      <h4>servers </h4>
+      <h4>servers</h4>
       <thead>
         <tr>
           <th><center>ADDR</center></th>
@@ -23,40 +23,13 @@
         </tr>
       </thead>
       <tbody>
-        {% for server in servers %}
-        <tr>
-          {% for item in server.summary_server() %}
-          <td align="right">{{ item }} </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="row">
-    <table class="table table-bordered table-striped sortable" >
-      <h4>buckets </h4>
-      <thead>
-        <tr>
-          <th><center>ADDR</center></th>
-          <th><center>BUCKET</center></th>
-          <th><center>DU</center></th>
-          <th><center>#KEY</center></th>
-          <th><center>#HASH</center></th>
-          <th><center>CHUNK</center></th>
-          <th><center>OFFSET</center></th>
-          <th><center>NEXTGC</center></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for server in servers %}
-          {% for bucket in server.summary_buckets() %}
-            <tr>
-            {% for item in bucket %}
-             <td align="right">{{ item }} </td>
+        {% for server in servers%}
+          <tr>
+            <td align="right">  <a href="{{ server[1] }}" > {{ server[0] }} </a>  </td>
+            {% for item in server[2:] %}
+            <td align="right">{{ item }} </td>
             {% endfor %}
-            </tr>
-          {% endfor %}
+          </tr>
         {% endfor %}
       </tbody>
     </table>

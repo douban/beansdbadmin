@@ -11,9 +11,10 @@ import telnetlib
 from pprint import pprint
 
 from beansdb_tools.tools.backup import get_backup_config
+from beansdb_tools.sa.cmdb import get_hosts_by_tag
+
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin.config import IGNORED_SERVERS
-from beansdb_tools.sa.cmdb import get_hosts_by_tag
 
 import logging
 logger = logging.getLogger('gc')

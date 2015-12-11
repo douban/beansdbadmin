@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/bootstrap-sortable.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="row">
+    <table class="table table-bordered table-striped sortable">
+      <h4>buckets </h4>
+      <thead>
+        <tr>
+          <th><center>RANK</center></th>
+          <th><center>BUCKET</center></th>
+          <th><center>MAX DIFF</center></th>
+          <th><center>SERVERS</center></th>
+          <th><center>BACKUPS</center></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bkt in buckets %}
+        <tr>
+          <td align="right">{{ bkt.rank }} </td>
+          <td align="right">{{ bkt.bucket_id_str }} </td>
+          <td align="right">{{ bkt.max_diff }} </td>
+          <td align="right">
+            {% for s in bkt.servers %}
+               <li>{{s[0]}} : {{s[1]}} </li>
+            {% endfor %}
+           </td>
+           <td align="right">
+            {% for s in bkt.backups %}
+               <li>{{s[0]}} : {{s[1]}} </li>
+            {% endfor %}
+           </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div><!-- /.container -->
+
+{% endblock %}
+
+{% block footer %}
+<script src="{{ url_for('static', filename='js/bootstrap-sortable.js') }}"></script>
+<script src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
+{% endblock %}
