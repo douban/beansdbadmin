@@ -75,7 +75,7 @@ class ServerInfo(object):
                        for (_, dinfo) in self.du['Disks'].items()])
         return [self.host,
                 "%s:7903" % (self.host),
-                "%d/%d" % (len(self.buckets_id), self.numbucket),
+                "%d/%x" % (len(self.buckets_id), self.numbucket),
                 self.stats["version"],
                 total_items,
                 big_num(rss*1024, 2, 2),
@@ -89,7 +89,7 @@ def summary_bucket(host, bkt, digit):
     fmt = "%%0%dx" % digit
     hint_state = bkt["HintState"]
     return [host,
-            "%s:7903/bucket/%d" % (host, bkt_id),
+            "%s:7903/bucket/%x" % (host, bkt_id),
             fmt % bkt_id,
             big_num(bkt["DU"], 3, 2),
             bkt["Pos"]["ChunkID"],

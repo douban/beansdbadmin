@@ -2,7 +2,7 @@
 from flask import Flask
 from flask import render_template as tmpl
 
-from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH
+from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH, update_gc_status
 from beansdbadmin.tools.server import (
     get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
     )
@@ -19,7 +19,8 @@ def index():
 @app.route('/gc/')
 def gc():
     gc_record = GCRecord(SQLITE_DB_PATH)
-    records = gc_record.get_all_record()
+    update_gc_status(gc_record)
+    records = gc_record.get_all()
     return tmpl('gc.html', gc_records=sorted(records, reverse=True))
 
 @app.route('/servers/')
@@ -35,7 +36,7 @@ def buckets():
 
 @app.route('/sync/')
 def sync():
-    bs = get_all_buckets_key_counts(256)
+    bs = get_all_buckets_key_counts(16)
     return tmpl('sync.html', buckets=bs)
 
 def main():
