@@ -158,28 +158,30 @@ def main():
         pprint(gc_record.get_all())
         return
 
-    if args.update_status:
-        with FileLock(SQLITE_DB_PATH, timeout=10):
+    with FileLock(SQLITE_DB_PATH, timeout=10):
+        if args.update_status:
             update_gc_status(gc_record)
-        return
+            return
+        gc_all_buckets(args.debug)
 
-    gc_all_buckets(args.debug)
 
-
-def gc_all_buckets(servers, debug=False):
+def gc_all_buckets(debug=False):
     servers = get_servers(IGNORED_SERVERS)
     buckets = []
     for s in servers:
         for bkt in get_bucket_all(s):
             bkt_id = bkt["ID"]
             gcing = (bkt["HintState"] >= 4)
-            if gcing and not debug:
-                return
+            if gcing:
+                if not debug:
+                    logging.info("%s %s is gcing", s, bkt_id)
+                    return
             #lastgc = bkt["LastGC"]
             du = bkt["DU"]
             buckets.append((s, bkt_id, bkt, du))
     buckets.sort(key=lambda x: x[-1], reverse=True)
     bkt = buckets[0]
+    # pprint(buckets)
     gc_bucket(bkt[0], bkt[1], debug)
 
 
