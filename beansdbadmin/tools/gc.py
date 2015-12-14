@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger('gc')
 LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
 import getpass
-if getpass.getuser() == "beansdb":
+if getpass.getuser() in ("beansdb", "root"):
     LOG_FILENAME = '/var/log/beansdb-admin/gc.log'
     SQLITE_DB_PATH = '/data/beansdbadmin/gobeansdb-gc.db'
     logging.basicConfig(filename=LOG_FILENAME,
