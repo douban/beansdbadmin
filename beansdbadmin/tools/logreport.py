@@ -13,7 +13,7 @@ from beansdb_tools.core.server_info import get_http
 logger = logging.getLogger('logerr')
 LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
 
-if getpass.getuser() == "beansdb":
+if getpass.getuser() in ("beansdb", "root"):
     SQLITE_DB_PATH = '/data/beansdbadmin/log_err.db'
     logging.basicConfig(level=logging.INFO,
                         format=LOG_FORMAT)
@@ -35,8 +35,7 @@ def send_sms(msg):
         return
     phone_nums = ["15510084669"]
     os.environ['DOUBAN_PRODUCTION'] = '1'
-    postfix = '【豆瓣】'
-    msg += postfix
+
     try:
         Sms.send_multi(SMS_TYPE_PLATFORM, phone_nums, msg)
     except:
@@ -97,7 +96,8 @@ def report_err(db, server, err):
     else:
         db.add(server, ts, err["Level"], err["File"], err["Line"], err["Msg"])
         logging.debug("%s %s added", server, ts)
-        send_sms("%s %s" % (server, json.dumps(err)))
+        send_sms("%s %s %s %s %s" %
+                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:80]))
 
 
 def check_errs(db, server):
@@ -135,7 +135,7 @@ def main():
 
     server_ports = get_hosts_by_tag("gobeansdb_servers")
     servers = [x.split(':')[0] for x in server_ports]
-    servers.append("rosa4h")
+    #servers.append("rosa4h")
     for s in servers:
         try:
             check_errs(db, s)
