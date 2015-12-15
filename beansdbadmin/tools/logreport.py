@@ -97,7 +97,7 @@ def report_err(db, server, err):
         db.add(server, ts, err["Level"], err["File"], err["Line"], err["Msg"])
         logging.debug("%s %s added", server, ts)
         send_sms("%s %s %s %s %s" %
-                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:80]))
+                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:30]))
 
 
 def check_errs(db, server):
