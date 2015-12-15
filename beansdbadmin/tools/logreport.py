@@ -23,7 +23,7 @@ else:
                         format=LOG_FORMAT)
 
 try:
-    from sms_service_client import Sms, SMS_TYPE_PLATFORM
+    from sms_service_client import Sms, SMS_TYPE_PLATFORM, SMS_OPTION
     has_sms = True
 except:
     has_sms = False
@@ -37,7 +37,8 @@ def send_sms(msg):
     os.environ['DOUBAN_PRODUCTION'] = '1'
 
     try:
-        Sms.send_multi(SMS_TYPE_PLATFORM, phone_nums, msg)
+        for phone in phone_nums:
+            Sms.send(SMS_TYPE_PLATFORM, phone, msg, SMS_OPTION.SKIP_IP_SPAM_CHECK | SMS_OPTION.SKIP_PHONE_SPAM_CHECK)
     except:
         pass
 
@@ -97,7 +98,7 @@ def report_err(db, server, err):
         db.add(server, ts, err["Level"], err["File"], err["Line"], err["Msg"])
         logging.debug("%s %s added", server, ts)
         send_sms("%s %s %s %s %s" %
-                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:30]))
+                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:100]))
 
 
 def check_errs(db, server):
