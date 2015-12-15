@@ -234,7 +234,8 @@ def update_gc_status(db):
 
     for bkt, old in indb.items():
         if bkt not in online:
-            db.update_status(old[0], "lost")
+            if old[-1] == "running":
+                db.update_status(old[0], "lost")
 
     for bkt, new in online.items():
         old = indb.get(bkt)
