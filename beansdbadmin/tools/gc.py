@@ -244,7 +244,7 @@ def update_gc_status(db):
             insert_rec(db, bkt[0], bkt[1], new)
         elif old[3] != new["BeginTS"][:19]:
             if old[-1] == "running":
-                db.update_record_status(old[0], "coverted")
+                db.update_status(old[0], "coverted")
             insert_rec(db, bkt[0], bkt[1], new)
         else:
             if old[-1] == "running":
@@ -278,10 +278,10 @@ def get_gc_stats_online(servers):
 def gc_bucket(server, bucket, debug=True):
     if debug:
         print "pretend gc %s %s" % (server, bucket)
-        res = get_http(server, "/gc/%s" % bucket)
+        res = get_http(server, "/gc/%x" % int(bucket))
         print res
         return
-    res = get_http(server, "/gc/%s?run=true" % bucket)
+    res = get_http(server, "/gc/%x?run=true" % int(bucket))
     _, _, ok = parse_gc_resp(res)
     if not ok:
         logging.error("gc %s %s: %s", server, bucket, res)
