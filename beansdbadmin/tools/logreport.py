@@ -33,7 +33,7 @@ def send_sms(msg):
     logging.debug("send sms: %s", msg)
     if not has_sms:
         return
-    phone_nums = ["15510084669"]
+    phone_nums = ["15510084669", "15844035661"]
     os.environ['DOUBAN_PRODUCTION'] = '1'
 
     try:
