@@ -15,7 +15,7 @@ LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
 
 if getpass.getuser() in ("beansdb", "root"):
     SQLITE_DB_PATH = '/data/beansdbadmin/log_err.db'
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                         format=LOG_FORMAT)
 else:
     SQLITE_DB_PATH = './log_err.db'
@@ -33,14 +33,14 @@ def send_sms(msg):
     logging.debug("send sms: %s", msg)
     if not has_sms:
         return
-    phone_nums = ["15510084669"]
+    phone_nums = ["15510084669", "15844035661"]
     os.environ['DOUBAN_PRODUCTION'] = '1'
 
     try:
         for phone in phone_nums:
             Sms.send(SMS_TYPE_PLATFORM, phone, msg, SMS_OPTION.SKIP_IP_SPAM_CHECK | SMS_OPTION.SKIP_PHONE_SPAM_CHECK)
-    except:
-        pass
+    except Exception as e:
+        print e
 
 class LOGERR(object):
 

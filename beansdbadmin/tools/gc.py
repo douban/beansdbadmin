@@ -29,7 +29,7 @@ else:
                         format=LOG_FORMAT)
 
 
-DISK_FREE_SIZE_THRESHHOLD_MAX = (40<<30)
+SIZE_GC = (420<<30)
 
 
 # gc record database
@@ -182,7 +182,8 @@ def gc_all_buckets(debug=False):
     buckets.sort(key=lambda x: x[-1], reverse=True)
     bkt = buckets[0]
     # pprint(buckets)
-    gc_bucket(bkt[0], bkt[1], debug)
+    if bkt[-1] > SIZE_GC:
+        gc_bucket(bkt[0], bkt[1], debug)
 
 
 def get_status(gc):
@@ -243,7 +244,7 @@ def update_gc_status(db):
             insert_rec(db, bkt[0], bkt[1], new)
         elif old[3] != new["BeginTS"][:19]:
             if old[-1] == "running":
-                db.update_record_status(old[0], "coverted")
+                db.update_status(old[0], "coverted")
             insert_rec(db, bkt[0], bkt[1], new)
         else:
             if old[-1] == "running":
@@ -277,10 +278,10 @@ def get_gc_stats_online(servers):
 def gc_bucket(server, bucket, debug=True):
     if debug:
         print "pretend gc %s %s" % (server, bucket)
-        res = get_http(server, "/gc/%s" % bucket)
+        res = get_http(server, "/gc/%x" % int(bucket))
         print res
         return
-    res = get_http(server, "/gc/%s?run=true" % bucket)
+    res = get_http(server, "/gc/%x?run=true" % int(bucket))
     _, _, ok = parse_gc_resp(res)
     if not ok:
         logging.error("gc %s %s: %s", server, bucket, res)
