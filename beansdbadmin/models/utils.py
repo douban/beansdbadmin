@@ -1,5 +1,6 @@
 # coding: utf-8
 import time
+import itertools
 
 
 K = (1 << 10)
@@ -22,3 +23,8 @@ def big_num(n, before=4, after=2):
 def get_start_time(uptime):
     start_time = time.localtime(time.time() - uptime)
     return time.strftime("%Y-%m-%d %H:%M:%S", start_time)
+
+
+def grouper(n, iterable):
+    args = [iter(iterable)] * n
+    return ([e for e in t if e != None] for t in itertools.izip_longest(*args))

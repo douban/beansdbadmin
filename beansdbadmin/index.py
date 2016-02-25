@@ -49,7 +49,16 @@ def sync():
 def db_proxys():
     proxies = Proxies()
     stats = proxies.get_stats()
-    return tmpl('proxies.html', stats=stats)
+    scores_summary = proxies.get_scores_summary()
+    return tmpl('proxies.html', stats=stats, scores=scores_summary)
+
+
+@app.route('/score/<server>/')
+def server_scores(server):
+    proxies = Proxies()
+    proxy_hosts = sorted(proxies.get_proxy_hosts())
+    scores = proxies.get_scores(server)
+    return tmpl('scores.html', server=server, proxy_hosts=proxy_hosts, scores=scores)
 
 
 def main():
