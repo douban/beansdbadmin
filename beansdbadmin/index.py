@@ -3,7 +3,7 @@ from flask import Flask
 from flask import render_template as tmpl
 
 from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH, update_gc_status
-from beansdbadmin.tools.server import (
+from beansdbadmin.models.server import (
     get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
 )
 from beansdbadmin.models.proxy import Proxies
