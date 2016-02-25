@@ -3,7 +3,7 @@
 {% block extra_head %}
 <link href="{{ url_for('static', filename='css/bootstrap-sortable.css') }}" rel="stylesheet">
 <style>
-  .td {
+  td {
     text-align: right;
   }
 </style>
@@ -21,15 +21,25 @@
           <th><center>VERSION</center></th>
           <th><center>RSS</center></th>
           <th><center>START TIME</center></th>
+          <th><center>#GET</center></th>
+          <th><center>#SET</center></th>
+          <th><center>#DELETE</center></th>
+          <th><center>READ</center></th>
+          <th><center>WRITE</center></th>
         </tr>
       </thead>
       <tbody>
         {% for s in stats %}
           <tr>
-            <td><a href="http://{{ s['web_addr'] }}"> {{ s['host'] }}</a></td>
+            <td><a href="http://{{ s['web_addr'] }}"> {{ s['host_alias'] }} ({{ s['host']}})</a></td>
             <td>{{ s.get('version', '') }}</td>
             <td>{{ s.get('rusage_maxrss') }}</td>
-            <td>{{ s.get('uptime') }}</td>
+            <td>{{ s.get('start_time') }}</td>
+            <td>{{ s.get('get') }}</td>
+            <td>{{ s.get('write') }}</td>
+            <td>{{ s.get('delete') }}</td>
+            <td>{{ s.get('read') }}</td>
+            <td>{{ s.get('write') }}</td>
           </tr>
         {% endfor %}
       </tbody>

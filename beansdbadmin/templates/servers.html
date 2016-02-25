@@ -25,7 +25,7 @@
       <tbody>
         {% for server in servers%}
           <tr>
-            <td align="right">  <a href="http://{{ server[1] }}" > {{ server[0] }} </a> </td>
+            <td align="right"><a href="http://{{ server[1] }}">{{ server[0] }}</a></td>
             {% for item in server[2:] %}
             <td align="right">{{ item }} </td>
             {% endfor %}
