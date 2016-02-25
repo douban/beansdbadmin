@@ -2,12 +2,11 @@
 # encoding: utf-8
 
 import time
-import collections
 
 from beansdb_tools.sa.cmdb import get_hosts_by_tag
 from beansdb_tools.core.server_info import (
     get_du, get_buffer_stat, get_bucket_all, get_config, get_lasterr_ts
-    )
+)
 from beansdb_tools.core.client import DBClient
 
 K = (1 << 10)

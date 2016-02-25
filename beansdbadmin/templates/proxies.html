@@ -2,6 +2,11 @@
 
 {% block extra_head %}
 <link href="{{ url_for('static', filename='css/bootstrap-sortable.css') }}" rel="stylesheet">
+<style>
+  .td {
+    text-align: right;
+  }
+</style>
 {% endblock %}
 
 {% block body %}
@@ -13,22 +18,18 @@
       <thead>
         <tr>
           <th><center>ADDR</center></th>
-          <th><center>#BUCKET</center></th>
           <th><center>VERSION</center></th>
-          <th><center>#KEY</center></th>
           <th><center>RSS</center></th>
-          <th><center>MIN DISK FREE</center></th>
           <th><center>START TIME</center></th>
-          <th><center>LAST ERROR</center></th>
         </tr>
       </thead>
       <tbody>
-        {% for server in servers%}
+        {% for s in stats %}
           <tr>
-            <td align="right">  <a href="http://{{ server[1] }}" > {{ server[0] }} </a> </td>
-            {% for item in server[2:] %}
-            <td align="right">{{ item }} </td>
-            {% endfor %}
+            <td><a href="http://{{ s['web_addr'] }}"> {{ s['host'] }}</a></td>
+            <td>{{ s.get('version', '') }}</td>
+            <td>{{ s.get('rusage_maxrss') }}</td>
+            <td>{{ s.get('uptime') }}</td>
           </tr>
         {% endfor %}
       </tbody>
