@@ -26,5 +26,13 @@ def get_start_time(uptime):
 
 
 def grouper(n, iterable):
+    """
+    grouper(3, range(10))
+    >>> [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+    """
     args = [iter(iterable)] * n
     return ([e for e in t if e != None] for t in itertools.izip_longest(*args))
+
+
+if __name__ =="__main__":
+    print list(grouper(3, range(10)))

@@ -27,7 +27,10 @@ class Proxy(object):
     def get_info(self, name):
         url = 'http://%s/stats/%s' % ('rosa5c:7908', name)
         # url = 'http://%s/stats/%s' % (self.web_addr, name)
-        data = json.loads(get_url_content(url))
+        try:
+            data = json.loads(get_url_content(url))
+        except Exception:
+            return {}
         return data
 
     def get_score(self):
@@ -36,16 +39,19 @@ class Proxy(object):
     def get_stats(self):
         stats = self.server.stats()
         rs = stats.values()[0]
-        rs['web_addr'] = self.web_addr
-        rs['host'] = self.host
-        rs['host_alias'] = self.host_alias
-        rs['rusage_maxrss'] = big_num(rs['rusage_maxrss'] * 1000, 1, 2)
-        rs['start_time'] = get_start_time(rs['uptime'])
-        rs['get'] = big_num(rs['cmd_get'], 1, 2)
-        rs['set'] = big_num(rs['cmd_set'], 1, 2)
-        rs['delete'] = big_num(rs['cmd_delete'], 1, 2)
-        rs['read'] = big_num(rs['bytes_written'], 1, 2)
-        rs['write'] = big_num(rs['bytes_read'], 1, 2)
+        try:
+            rs['web_addr'] = self.web_addr
+            rs['host'] = self.host
+            rs['host_alias'] = self.host_alias
+            rs['rusage_maxrss'] = big_num(rs['rusage_maxrss'] * 1000, 1, 2)
+            rs['start_time'] = get_start_time(rs['uptime'])
+            rs['get'] = big_num(rs['cmd_get'], 1, 2)
+            rs['set'] = big_num(rs['cmd_set'], 1, 2)
+            rs['delete'] = big_num(rs['cmd_delete'], 1, 2)
+            rs['read'] = big_num(rs['bytes_written'], 1, 2)
+            rs['write'] = big_num(rs['bytes_read'], 1, 2)
+        except KeyError:
+            pass
         return rs
 
 
