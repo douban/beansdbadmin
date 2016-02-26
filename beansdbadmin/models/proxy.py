@@ -25,8 +25,7 @@ class Proxy(object):
         self.server = libmc.Client([self.server_addr])
 
     def get_info(self, name):
-        url = 'http://%s/stats/%s' % ('rosa5c:7908', name)
-        # url = 'http://%s/stats/%s' % (self.web_addr, name)
+        url = 'http://%s/stats/%s' % (self.web_addr, name)
         try:
             data = json.loads(get_url_content(url))
         except Exception:
