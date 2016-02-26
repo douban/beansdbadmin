@@ -1,0 +1,67 @@
+{% extends 'layout.html' %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/bootstrap-sortable.css') }}" rel="stylesheet">
+<style>
+  td {
+    text-align: right;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="row">
+    <table class="table table-bordered table-striped sortable">
+      <h4>proxies</h4>
+      <thead>
+        <tr>
+          <th><center>ADDR</center></th>
+          <th><center>VERSION</center></th>
+          <th><center>RSS</center></th>
+          <th><center>START TIME</center></th>
+          <th><center>#GET</center></th>
+          <th><center>#SET</center></th>
+          <th><center>#DELETE</center></th>
+          <th><center>READ</center></th>
+          <th><center>WRITE</center></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in stats %}
+          <tr>
+            <td><a href="http://{{ s['web_addr'] }}"> {{ s['host_alias'] }}</a> ({{ s['host']}})</td>
+            <td>{{ s.get('version', '') }}</td>
+            <td>{{ s.get('rusage_maxrss', '') }}</td>
+            <td>{{ s.get('start_time', '') }}</td>
+            <td>{{ s.get('get', '') }}</td>
+            <td>{{ s.get('write', '') }}</td>
+            <td>{{ s.get('delete', '') }}</td>
+            <td>{{ s.get('read', '') }}</td>
+            <td>{{ s.get('write', '') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table class="table table-bordered table-striped sortable">
+    <h4>servers scores summary</h4>
+    <tbody>
+      {% for row in scores %}
+      <tr>
+        {% for (server, score )in row %}
+        <td><a href="/score/{{ server }}/">{{ server }}</a> ({{ score }})</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+    </table>
+  </div>
+</div><!-- /.container -->
+
+{% endblock %}
+
+{% block footer %}
+<script src="{{ url_for('static', filename='js/bootstrap-sortable.js') }}"></script>
+<script src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
+{% endblock %}

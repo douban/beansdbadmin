@@ -1,45 +1,31 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import time
-import collections
-
 from beansdb_tools.sa.cmdb import get_hosts_by_tag
 from beansdb_tools.core.server_info import (
     get_du, get_buffer_stat, get_bucket_all, get_config, get_lasterr_ts
-    )
+)
 from beansdb_tools.core.client import DBClient
+from beansdbadmin.models.utils import get_start_time, big_num
 
-K = (1 << 10)
-M = (1 << 20)
-G = (1 << 30)
 
 backup_servers = ["chubb2", "chubb3"]
 
+
 def getprimaries():
     hosts = get_hosts_by_tag("gobeansdb_servers")
-    return [host for host in hosts if host not in backup_servers] # + ["rosa4h"]
+    return [host for host in hosts if host not in backup_servers]
+
 
 def get_all_server_stats():
     sis = [ServerInfo(host) for host in getprimaries()]
     sis.sort(key=lambda x: (x.err is None, x.host))
     return sis
 
+
 def get_all_buckets_stats(digit=2):
     buckets = [get_buckets_info(host, digit) for host in getprimaries()]
     return [b for b in buckets if b is not None]
-
-
-def big_num(n, before=4, after=2):
-    n = float(n)
-    fmt = "%%0%d.%df" % (before+after+1, after)
-    if n < 1000:
-        return str(n)
-    elif n < K * 1000:
-        return (fmt % (n/K)) + "K"
-    elif n < M * 1000:
-        return (fmt % (n/M)) + "M"
-    return (fmt % (n/G)) + "G"
 
 
 class ServerInfo(object):
@@ -67,8 +53,7 @@ class ServerInfo(object):
                     "%s" % self.err
                    ]
 
-        start_time = time.localtime(time.time() - int(self.stats['uptime']))
-        start_time = time.strftime("%Y-%m-%dT%H:%M:%S", start_time)
+        start_time = get_start_time(int(self.stats['uptime']))
         rss = self.stats["rusage_maxrss"]
         total_items = self.stats["total_items"]
         mindisk = min([dinfo['Free']
@@ -78,11 +63,12 @@ class ServerInfo(object):
                 "%d/%x" % (len(self.buckets_id), self.numbucket),
                 self.stats["version"],
                 total_items,
-                big_num(rss*1024, 2, 2),
+                big_num(rss * 1024, 2, 2),
                 big_num(mindisk, 2, 2),
                 start_time,
                 self.lasterr_ts,
                ]
+
 
 def summary_bucket(host, bkt, digit):
     bkt_id = bkt["ID"]
@@ -97,6 +83,7 @@ def summary_bucket(host, bkt, digit):
             bkt["NextGCChunk"],
             hint_state,
            ]
+
 
 def get_buckets_info(host, digit):
     try:
@@ -153,7 +140,7 @@ def get_buckets_key_counts(host, n):
         mc = DBClient(host + ":7900")
         d256 = dict()
         for i, _ in d16.items():
-            subd = get_key_counts(mc, "%x" % i, 16*i)
+            subd = get_key_counts(mc, "%x" % i, 16 * i)
             d256.update(subd)
         return d256
 
