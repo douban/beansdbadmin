@@ -56,9 +56,9 @@ def db_proxys():
 @app.route('/score/<server>/')
 def server_scores(server):
     proxies = Proxies()
-    proxy_hosts = sorted(proxies.get_proxy_hosts())
+    proxy_list = sorted(proxies.proxies, key=lambda x: x.host)
     scores = proxies.get_scores(server)
-    return tmpl('scores.html', server=server, proxy_hosts=proxy_hosts, scores=scores)
+    return tmpl('scores.html', server=server, proxy_list=proxy_list, scores=scores)
 
 
 def main():

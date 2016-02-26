@@ -22,8 +22,8 @@
       <thead>
         <tr>
           <td>bucket</td>
-          {% for h in proxy_hosts %}
-            <td>{{ h }}</td>
+          {% for p in proxy_list %}
+          <td><a href="http://{{ p.web_addr }}">{{ p.host }}</a></td>
           {% endfor %}
         </tr>
       </thead>
@@ -31,9 +31,9 @@
         {% for bkt in scores %}
           <tr>
             <td>{{ bkt }}</td>
-            {% for h in proxy_hosts %}
+            {% for p in proxy_list %}
               <td>
-                  {% for s, score in scores[bkt][h] %}
+                  {% for s, score in scores[bkt][p.host] %}
                     {% if s == server %}
                     <li class="highlight"> {{ s }}:{{ score }} </li>
                     {% else %}
