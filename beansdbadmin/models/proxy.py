@@ -56,8 +56,11 @@ class Proxy(object):
 
 class Proxies(object):
 
-    def __init__(self, config_name='shire-online'):
-        self.proxy_addrs = read_config(config_name, 'beansdb').get('proxies')
+    def __init__(self, config='shire-online'):
+        if isinstance(config, str):
+            self.proxy_addrs = read_config(config, 'beansdb').get('proxies')
+        else:
+            self.proxy_addrs = config
         HOST = 0
         self.proxies = [Proxy(x.split(':')[HOST]) for x in self.proxy_addrs]
 

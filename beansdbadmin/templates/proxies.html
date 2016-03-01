@@ -50,7 +50,11 @@
       {% for row in scores %}
       <tr>
         {% for (server, score )in row %}
+        {% if is_online %}
         <td><a href="/score/{{ server }}/">{{ server }}</a> ({{ score }})</td>
+        {% else %}
+        <td><a href="/offline_score/{{ server }}/">{{ server }}</a> ({{ score }})</td>
+        {% endif %}
         {% endfor %}
       </tr>
       {% endfor %}

@@ -7,6 +7,7 @@ from beansdbadmin.models.server import (
     get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
 )
 from beansdbadmin.models.proxy import Proxies
+from beansdbadmin.config import OFFLINE_PROXIES
 
 
 app = Flask(__name__)
@@ -45,20 +46,52 @@ def sync():
     return tmpl('sync.html', buckets=bs)
 
 
-@app.route('/proxies/')
-def db_proxys():
-    proxies = Proxies()
+def generate_proxies(is_online):
+    if is_online:
+        return Proxies()
+    else:
+        return Proxies(OFFLINE_PROXIES)
+
+
+def process_proxies(is_online):
+    proxies = generate_proxies(is_online)
     stats = proxies.get_stats()
     scores_summary = proxies.get_scores_summary()
-    return tmpl('proxies.html', stats=stats, scores=scores_summary)
+    return tmpl('proxies.html',
+                stats=stats,
+                scores=scores_summary,
+                is_online=is_online)
+
+
+def process_scores(server, is_online):
+    proxies = generate_proxies(is_online)
+    proxy_list = sorted(proxies.proxies, key=lambda x: x.host)
+    scores = proxies.get_scores(server)
+    return tmpl('scores.html',
+                server=server,
+                proxy_list=proxy_list,
+                scores=scores)
+
+
+
+@app.route('/proxies/')
+def db_proxies():
+    return process_proxies(is_online=True)
+
+
+@app.route('/offline_proxies/')
+def db_offline_proxies():
+    return process_proxies(is_online=False)
 
 
 @app.route('/score/<server>/')
 def server_scores(server):
-    proxies = Proxies()
-    proxy_list = sorted(proxies.proxies, key=lambda x: x.host)
-    scores = proxies.get_scores(server)
-    return tmpl('scores.html', server=server, proxy_list=proxy_list, scores=scores)
+    return process_scores(server, is_online=True)
+
+
+@app.route('/offline_score/<server>/')
+def offline_server_scores(server):
+    return process_scores(server, is_online=False)
 
 
 def main():
