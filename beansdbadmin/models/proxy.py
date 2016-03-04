@@ -4,6 +4,7 @@ import json
 import libmc
 import socket
 import collections
+from operator import itemgetter
 
 from douban.utils.config import read_config
 from beansdb_tools.utils import get_url_content
@@ -86,14 +87,25 @@ class Proxies(object):
         return rs
 
     def get_scores_summary(self):
-        rs = collections.defaultdict(int)
+        rs = {}
+        host_bkts = collections.defaultdict(set)
         for p in self.proxies:
             for bkt, server_scores in p.get_score().iteritems():
-                for server in server_scores:
-                    rs[server.split(":")[0]] += int(server_scores[server])
-        return grouper(10, sorted(rs.iteritems(), key=lambda x: x[1], reverse=True))
+                sorted_server_scores = sorted(server_scores.iteritems(),
+                                              key=itemgetter(1),
+                                              reverse=True)
+                for i, (server, score) in enumerate(sorted_server_scores):
+                    host = server.split(':')[0]
+                    rs.setdefault(host, collections.defaultdict(int))
+                    rs[host]['score'] += int(score)
+                    rs[host][i] += 1
+                    host_bkts[host].add(bkt)
+                    rs[host]['bkt'] = len(host_bkts[host])
+        # sorted by the number of rank 0 (0-based)
+        return grouper(10, sorted(rs.iteritems(), key=lambda x: x[1][0], reverse=True))
 
 
 if __name__ == '__main__':
     p = Proxies()
-    print p.get_scores('rosa3g')
+    #print p.get_scores('rosa3g')
+    print p.get_scores_summary()

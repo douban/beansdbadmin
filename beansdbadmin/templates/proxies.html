@@ -46,15 +46,19 @@
     </table>
     <table class="table table-bordered table-striped sortable">
     <h4>servers scores summary</h4>
+    <p> Format: host[#buket] (#first, #second, #third, score)</p>
     <tbody>
       {% for row in scores %}
       <tr>
         {% for (server, score )in row %}
-        {% if is_online %}
-        <td><a href="/score/{{ server }}/">{{ server }}</a> ({{ score }})</td>
-        {% else %}
-        <td><a href="/offline_score/{{ server }}/">{{ server }}</a> ({{ score }})</td>
-        {% endif %}
+        <td>
+          {% if is_online %}
+          <a href="/score/{{ server }}/">{{ '%s[%d]' % (server, score['bkt']) }}</a>
+          {% else %}
+          <a href="/offline_score/{{ server }}/">{{ '%s[%d]' % (server, score['bkt']) }}</a>
+          {% endif %}
+          ({{ '%d,%d,%d,%d' % (score[0], score[1], score[2], score['score']) }})
+        </td>
         {% endfor %}
       </tr>
       {% endfor %}
