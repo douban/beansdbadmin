@@ -26,7 +26,7 @@ class Proxy(object):
         self.server = libmc.Client([self.server_addr])
 
     def get_info(self, name):
-        url = 'http://%s/stats/%s' % (self.web_addr, name)
+        url = 'http://%s/%s' % (self.web_addr, name)
         try:
             data = json.loads(get_url_content(url))
         except Exception:
@@ -34,7 +34,7 @@ class Proxy(object):
         return data
 
     def get_score(self):
-        return self.get_info('score')
+        return self.get_info('score/json')
 
     def get_stats(self):
         stats = self.server.stats()
@@ -106,6 +106,6 @@ class Proxies(object):
 
 
 if __name__ == '__main__':
-    p = Proxies()
+    proxy = Proxies()
     #print p.get_scores('rosa3g')
-    print p.get_scores_summary()
+    print proxy.get_scores_summary()
