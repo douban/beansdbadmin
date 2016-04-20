@@ -7,8 +7,7 @@ from beansdbadmin.models.server import (
     get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
 )
 from beansdbadmin.models.proxy import Proxies
-from beansdbadmin.config import OFFLINE_PROXIES
-
+import beansdbadmin.config as config
 
 app = Flask(__name__)
 
@@ -36,7 +35,7 @@ def servers():
 
 @app.route('/buckets/')
 def buckets():
-    server_buckets = get_all_buckets_stats(1)
+    server_buckets = get_all_buckets_stats(2 if config.cluster=="fs" else 1)
     return tmpl('buckets.html', server_buckets=server_buckets)
 
 
@@ -50,8 +49,7 @@ def generate_proxies(is_online):
     if is_online:
         return Proxies()
     else:
-        return Proxies(OFFLINE_PROXIES)
-
+        return Proxies()
 
 def process_proxies(is_online):
     proxies = generate_proxies(is_online)
@@ -101,7 +99,12 @@ def main():
         "-p", "--port", type=int, default=5000,
         help="beansdbadmin agent port number."
     )
+    parser.add_argument(
+        "--cluster", required=True, choices=['db', 'fs', 'test'],
+        help="cluster name, will use zk config in /beansdb/<cluster>"
+    )
     args = parser.parse_args()
+    config.cluster = args.cluster
     app.run(debug=True, host="0.0.0.0", port=args.port)
 
 

@@ -7,24 +7,16 @@ from beansdb_tools.core.server_info import (
 )
 from beansdb_tools.core.client import DBClient
 from beansdbadmin.models.utils import get_start_time, big_num
-
-
-backup_servers = ["chubb2", "chubb3"]
-
-
-def getprimaries():
-    hosts = get_hosts_by_tag("gobeansdb_servers")
-    return [host for host in hosts if host not in backup_servers]
-
+from beansdbadmin.config import get_servers
 
 def get_all_server_stats():
-    sis = [ServerInfo(host) for host in getprimaries()]
+    sis = [ServerInfo(host) for host in get_servers()[0]]
     sis.sort(key=lambda x: (x.err is None, x.host))
     return sis
 
 
 def get_all_buckets_stats(digit=2):
-    buckets = [get_buckets_info(host, digit) for host in getprimaries()]
+    buckets = [get_buckets_info(host, digit) for host in get_servers()[0]]
     return [b for b in buckets if b is not None]
 
 
@@ -46,6 +38,11 @@ class ServerInfo(object):
         except Exception as e:
             self.err = e
 
+    def get_min_disk_free(self):
+        if not self.du:
+            return -1
+        return min([0] + [dinfo['Free'] for (_, dinfo) in self.du['Disks'].items()])
+
     def summary_server(self):
         if self.err is not None:
             return [self.host,
@@ -56,8 +53,7 @@ class ServerInfo(object):
         start_time = get_start_time(int(self.stats['uptime']))
         rss = self.stats["rusage_maxrss"]
         total_items = self.stats["total_items"]
-        mindisk = min([dinfo['Free']
-                       for (_, dinfo) in self.du['Disks'].items()])
+        mindisk = self.get_min_disk_free()
         return [self.host,
                 "%s:7903" % (self.host),
                 "%d/%x" % (len(self.buckets_id), self.numbucket),
@@ -147,13 +143,12 @@ def get_buckets_key_counts(host, n):
 
 def get_all_buckets_key_counts(n):
     buckets = [Bucket(n, i) for i in range(n)]
-    hosts = get_hosts_by_tag("gobeansdb_servers")
-    hosts = [i for i in hosts if i not in backup_servers]
-    for h in hosts:
+    primaries, backups = get_servers()
+    for h in primaries:
         d = get_buckets_key_counts(h, n)
         for bkt, count in d.items():
             buckets[bkt].servers.append((h, count))
-    for h in backup_servers:
+    for h in backups:
         d = get_buckets_key_counts(h, n)
         for bkt, count in d.items():
             buckets[bkt].backups.append((h, count))

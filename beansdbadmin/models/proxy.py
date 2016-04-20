@@ -6,11 +6,11 @@ import socket
 import collections
 from operator import itemgetter
 
-from douban.utils.config import read_config
 from beansdb_tools.utils import get_url_content
 
 from beansdbadmin.models.utils import big_num, get_start_time, grouper
 
+from beansdbadmin.config import get_proxies
 
 PROXY_SERVER_PORT = 7905
 PROXY_WEB_PORT = 7908
@@ -57,11 +57,8 @@ class Proxy(object):
 
 class Proxies(object):
 
-    def __init__(self, config='shire-online'):
-        if isinstance(config, str):
-            self.proxy_addrs = read_config(config, 'beansdb').get('proxies')
-        else:
-            self.proxy_addrs = config
+    def __init__(self):
+        self.proxy_addrs = get_proxies()
         HOST = 0
         self.proxies = [Proxy(x.split(':')[HOST]) for x in self.proxy_addrs]
 
