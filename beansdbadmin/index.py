@@ -42,6 +42,7 @@ def buckets():
 @app.route('/sync/')
 def sync():
     bs = get_all_buckets_key_counts(16)
+    #bs = get_all_buckets_key_counts(256 if config.cluster=="fs" else 16)
     return tmpl('sync.html', buckets=bs)
 
 

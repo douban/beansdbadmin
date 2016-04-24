@@ -5,6 +5,7 @@ from beansdb_tools.sa.cmdb import get_hosts_by_tag
 from beansdb_tools.core.server_info import (
     get_du, get_buffer_stat, get_bucket_all, get_config, get_lasterr_ts
 )
+from beansdb_tools.core.node import Node
 from beansdb_tools.core.client import DBClient
 from beansdbadmin.models.utils import get_start_time, big_num
 from beansdbadmin.config import get_servers
@@ -25,12 +26,17 @@ class ServerInfo(object):
     def __init__(self, host):
         self.host = host
         self.err = None
+        addr = self.host + ":7900"
+
+        node = Node(addr)
+        web = node.web_client()
+        self.mc = DBClient(addr)
         try:
             self.config = get_config(host)
+            self.route_version = web.get_route_version()
             self.numbucket = self.config['NumBucket']
             self.buckets_id = [i for (i, v) in enumerate(self.config['Buckets'])
                                if v == 1]
-            self.mc = DBClient(self.host + ":7900")
             self.du = get_du(self.host)
             self.buffer_stat = get_buffer_stat(self.host)
             self.lasterr_ts = get_lasterr_ts(self.host)
@@ -40,8 +46,12 @@ class ServerInfo(object):
 
     def get_min_disk_free(self):
         if not self.du:
-            return -1
-        return min([0] + [dinfo['Free'] for (_, dinfo) in self.du['Disks'].items()])
+            return 1
+        frees = [dinfo['Free'] for (_, dinfo) in self.du['Disks'].items()]
+        if frees:
+            return min(frees)
+        else:
+            return 0
 
     def summary_server(self):
         if self.err is not None:
@@ -58,9 +68,10 @@ class ServerInfo(object):
                 "%s:7903" % (self.host),
                 "%d/%x" % (len(self.buckets_id), self.numbucket),
                 self.stats["version"],
+                self.route_version,
                 total_items,
                 big_num(rss * 1024, 2, 2),
-                big_num(mindisk, 2, 2),
+                big_num(mindisk, 4, 2),
                 start_time,
                 self.lasterr_ts,
                ]

@@ -19,6 +19,7 @@
         <tr>
           <th><center>ADDR</center></th>
           <th><center>VERSION</center></th>
+          <th><center>ROUTE VERSION</center></th>
           <th><center>RSS</center></th>
           <th><center>START TIME</center></th>
           <th><center>#GET</center></th>
@@ -33,6 +34,7 @@
           <tr>
             <td><a href="http://{{ s['web_addr'] }}"> {{ s['host_alias'] }}</a> ({{ s['host']}})</td>
             <td>{{ s.get('version', '') }}</td>
+            <td>{{ s.get('route_version', '') }}</td>
             <td>{{ s.get('rusage_maxrss', '') }}</td>
             <td>{{ s.get('start_time', '') }}</td>
             <td>{{ s.get('get', '') }}</td>
