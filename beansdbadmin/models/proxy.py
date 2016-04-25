@@ -6,11 +6,12 @@ import socket
 import collections
 from operator import itemgetter
 
-from douban.utils.config import read_config
+from beansdb_tools.core.node import Node
 from beansdb_tools.utils import get_url_content
 
 from beansdbadmin.models.utils import big_num, get_start_time, grouper
 
+from beansdbadmin.config import get_proxies
 
 PROXY_SERVER_PORT = 7905
 PROXY_WEB_PORT = 7908
@@ -21,6 +22,10 @@ class Proxy(object):
     def __init__(self, host_alias):
         self.host_alias = host_alias
         self.host = socket.gethostbyname_ex(self.host_alias)[0]
+        self.addr = self.host + ":7905"
+        self.node = Node(self.addr)
+        self.web = self.node.web_client()
+
         self.server_addr = '%s:%s' % (self.host, PROXY_SERVER_PORT)
         self.web_addr = '%s:%s' % (self.host, PROXY_WEB_PORT)
         self.server = libmc.Client([self.server_addr])
@@ -39,9 +44,11 @@ class Proxy(object):
     def get_stats(self):
         stats = self.server.stats()
         rs = stats.values()[0]
+        route_version = self.web.get_route_version()
         try:
             rs['web_addr'] = self.web_addr
             rs['host'] = self.host
+            rs['route_version'] = route_version
             rs['host_alias'] = self.host_alias
             rs['rusage_maxrss'] = big_num(rs['rusage_maxrss'] * 1000, 1, 2)
             rs['start_time'] = get_start_time(rs['uptime'])
@@ -57,11 +64,8 @@ class Proxy(object):
 
 class Proxies(object):
 
-    def __init__(self, config='shire-online'):
-        if isinstance(config, str):
-            self.proxy_addrs = read_config(config, 'beansdb').get('proxies')
-        else:
-            self.proxy_addrs = config
+    def __init__(self):
+        self.proxy_addrs = get_proxies()
         HOST = 0
         self.proxies = [Proxy(x.split(':')[HOST]) for x in self.proxy_addrs]
 
