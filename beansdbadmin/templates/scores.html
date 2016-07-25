@@ -24,6 +24,7 @@
 
 <div class="container">
   <div class="row">
+    <div class="col-md-11">
     <table class="table table-bordered table-striped sortable">
       <h4>score for server {{ server }}</h4>
       <thead>
@@ -40,7 +41,7 @@
             <td>{{ bkt }}</td>
             {% for p in proxy_list %}
               <td>
-                  {% for s, score in scores[bkt][p.host] %}
+                  {% for s, score in scores[bkt][p.host]|sort(case_sensitive=True) %}
                     {% if s == server %}
                     <li class="highlight"> {{ s }}:{{ score }} </li>
                     {% else %}
@@ -53,6 +54,53 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
+    <div class="col-md-1">
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+    <h4>ARC for server {{ server }}</h4>
+    <table class="table table-bordered table-striped sortable">
+      <thead>
+        <tr>
+          <td>bucket</td>
+          {% for p in proxy_list %}
+          <td><a href="http://{{ p.web_addr }}">{{ p.host }}</a></td>
+          {% endfor %}
+          <td>AVG</td>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bkt in arcs %}
+          <tr>
+            <td>{{ bkt }}</td>
+
+            {% for p in proxy_list %}
+              <td>
+                  {% for s, arc in arcs[bkt][p.host]|sort(case_sensitive=True) %}
+                    {% if s == server %}
+                    <li class="highlight"> {{ s }}:{{ arc }} </li>
+                    {% else %}
+                    <li>{{ s }}:{{ arc }} </li>
+                    {% endif %}
+                  {% endfor %}
+              </td>
+            {% endfor %}
+            <td>
+	        {% for s, arc_avg in  buckets_avg[bkt]|dictsort %}
+		    {% if s == server %}
+                    <li class="highlight"> {{ s }}:{{ arc_avg }} </li>
+                    {% else %}
+                    <li>{{ s }}:{{ arc_avg }} </li>
+                    {% endif %}
+		{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
   </div>
 </div><!-- /.container -->
 
