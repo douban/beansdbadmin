@@ -18,7 +18,6 @@ PROXY_WEB_PORT = 7908
 
 
 class Proxy(object):
-
     def __init__(self, host_alias):
         self.host_alias = host_alias
         self.host = socket.gethostbyname_ex(self.host_alias)[0]
@@ -61,9 +60,11 @@ class Proxy(object):
             pass
         return rs
 
+    def get_arc(self):
+        return self.get_info('/api/partition')
+
 
 class Proxies(object):
-
     def __init__(self):
         self.proxy_addrs = get_proxies()
         HOST = 0
@@ -90,6 +91,21 @@ class Proxies(object):
                     ]
         return rs
 
+    def get_arcs(self, server):
+        rs = collections.defaultdict(dict)
+        for p in self.proxies:
+            for bkt, server_arcs in p.get_arc().iteritems():
+                addr = '%s:7900' % (server)
+                if addr in server_arcs:
+                    sorted_server_arcs = sorted(server_arcs.iteritems(),
+                                                key=lambda x: x[1],
+                                                reverse=True)
+                    rs[bkt][p.host] = [
+                        (s.split(":")[0], "%02d" % int(arc))
+                        for (s, arc) in sorted_server_arcs
+                    ]
+        return rs
+
     def get_scores_summary(self):
         rs = {}
         host_bkts = collections.defaultdict(set)
@@ -106,7 +122,10 @@ class Proxies(object):
                     host_bkts[host].add(bkt)
                     rs[host]['bkt'] = len(host_bkts[host])
         # sorted by the number of rank 0 (0-based)
-        return grouper(10, sorted(rs.iteritems(), key=lambda x: x[1][0], reverse=True))
+        return grouper(10,
+                       sorted(rs.iteritems(),
+                              key=lambda x: x[1][0],
+                              reverse=True))
 
 
 if __name__ == '__main__':

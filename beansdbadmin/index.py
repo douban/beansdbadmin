@@ -4,8 +4,7 @@ from flask import render_template as tmpl
 
 from beansdbadmin.tools.gc import GCRecord, SQLITE_DB_PATH, update_gc_status
 from beansdbadmin.models.server import (
-    get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats
-)
+    get_all_server_stats, get_all_buckets_key_counts, get_all_buckets_stats)
 from beansdbadmin.models.proxy import Proxies
 import beansdbadmin.config as config
 
@@ -35,7 +34,7 @@ def servers():
 
 @app.route('/buckets/')
 def buckets():
-    server_buckets = get_all_buckets_stats(2 if config.cluster=="fs" else 1)
+    server_buckets = get_all_buckets_stats(2 if config.cluster == "fs" else 1)
     return tmpl('buckets.html', server_buckets=server_buckets)
 
 
@@ -52,6 +51,7 @@ def generate_proxies(is_online):
     else:
         return Proxies()
 
+
 def process_proxies(is_online):
     proxies = generate_proxies(is_online)
     stats = proxies.get_stats()
@@ -66,11 +66,26 @@ def process_scores(server, is_online):
     proxies = generate_proxies(is_online)
     proxy_list = sorted(proxies.proxies, key=lambda x: x.host)
     scores = proxies.get_scores(server)
+    arcs = proxies.get_arcs(server)
+    buckets_avg = {}
+    for k, hosts in arcs.iteritems():
+        avgs = {}
+        count = 0
+        for key, value in hosts.iteritems():
+            count += 1
+            for host, arc in value:
+                sum = avgs.get(host, 0)
+                sum += int(arc)
+                avgs[host] = sum
+        for host, arc in avgs.iteritems():
+            avgs[host] = arc / count
+        buckets_avg[k] = avgs
     return tmpl('scores.html',
                 server=server,
                 proxy_list=proxy_list,
+                arcs=arcs,
+                buckets_avg=buckets_avg,
                 scores=scores)
-
 
 
 @app.route('/proxies/')
@@ -96,14 +111,16 @@ def offline_server_scores(server):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("-p",
+                        "--port",
+                        type=int,
+                        default=5000,
+                        help="beansdbadmin agent port number.")
     parser.add_argument(
-        "-p", "--port", type=int, default=5000,
-        help="beansdbadmin agent port number."
-    )
-    parser.add_argument(
-        "--cluster", required=True, choices=['db', 'fs', 'test'],
-        help="cluster name, will use zk config in /beansdb/<cluster>"
-    )
+        "--cluster",
+        required=True,
+        choices=['db', 'fs', 'test'],
+        help="cluster name, will use zk config in /beansdb/<cluster>")
     args = parser.parse_args()
     config.cluster = args.cluster
     app.run(debug=True, host="0.0.0.0", port=args.port)
