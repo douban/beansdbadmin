@@ -15,12 +15,10 @@ LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
 
 if getpass.getuser() in ("beansdb", "root"):
     SQLITE_DB_PATH = '/data/beansdbadmin/log_err.db'
-    logging.basicConfig(level=logging.DEBUG,
-                        format=LOG_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 else:
     SQLITE_DB_PATH = './log_err.db'
-    logging.basicConfig(level=logging.DEBUG,
-                        format=LOG_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
 try:
     from sms_service_client import Sms, SMS_TYPE_PLATFORM, SMS_OPTION
@@ -28,29 +26,35 @@ try:
 except:
     has_sms = False
 
+PHONE_NUMS = {
+   "yangxiufeng": "15510084669" ,
+   "zhuzhaolong": "15844035661" ,
+   "sunchaotang": "18612700632"
+}
+
 
 def send_sms(msg):
     logging.debug("send sms: %s", msg)
     if not has_sms:
         return
-    phone_nums = ["15510084669", "15844035661"]
     os.environ['DOUBAN_PRODUCTION'] = '1'
 
     try:
-        for phone in phone_nums:
-            Sms.send(SMS_TYPE_PLATFORM, phone, msg, SMS_OPTION.SKIP_IP_SPAM_CHECK | SMS_OPTION.SKIP_PHONE_SPAM_CHECK)
+        for phone in PHONE_NUMS.itervalues():
+            Sms.send(SMS_TYPE_PLATFORM, phone, msg,
+                     SMS_OPTION.SKIP_IP_SPAM_CHECK
+                     | SMS_OPTION.SKIP_PHONE_SPAM_CHECK)
     except Exception as e:
         print e
 
-class LOGERR(object):
 
+class LOGERR(object):
     def __init__(self, path):
         self.conn = sqlite3.connect(path)
         self.cursor = self.conn.cursor()
 
     def create_table(self):
-        self.cursor.execute(
-            """CREATE TABLE log_err (
+        self.cursor.execute("""CREATE TABLE log_err (
             id INTEGER PRIMARY KEY,
             server TEXT,
             ts TEXT,
@@ -68,24 +72,23 @@ class LOGERR(object):
         self.cursor.execute(
             """INSERT INTO log_err (server, ts, level, fname, lineno, msg)
            VALUES (:server, :ts, :level, :fname, :lineno, :msg)
-        """,
-            {'server': server, 'ts': ts, 'level':level, 'fname':fname, 'lineno': lineno, 'msg':msg}
-        )
+        """, {'server': server,
+              'ts': ts,
+              'level': level,
+              'fname': fname,
+              'lineno': lineno,
+              'msg': msg})
         self.conn.commit()
 
     def get(self, server, ts):
-        self.cursor.execute(
-            """select * from log_err
+        self.cursor.execute("""select * from log_err
            WHERE server = :server and ts = :ts
-        """,
-            {'server': server, 'ts': ts}
-        )
+        """, {'server': server,
+              'ts': ts})
         return self.cursor.fetchall()
 
     def get_all(self):
-        self.cursor.execute(
-            "SELECT * FROM log_err"
-        )
+        self.cursor.execute("SELECT * FROM log_err")
         return self.cursor.fetchall()
 
 
@@ -97,8 +100,9 @@ def report_err(db, server, err):
     else:
         db.add(server, ts, err["Level"], err["File"], err["Line"], err["Msg"])
         logging.debug("%s %s added", server, ts)
-        send_sms("%s %s %s %s %s" %
-                 (server, err["Level"], err["File"], err["Line"], err["Msg"][:100]))
+        send_sms(
+            "%s %s %s %s %s" %
+            (server, err["Level"], err["File"], err["Line"], err["Msg"][:100]))
 
 
 def check_errs(db, server):
@@ -108,21 +112,23 @@ def check_errs(db, server):
         if e is not None:
             report_err(db, server, e)
 
+
 def report_fail(server, e):
     logging.debug("%s fail: %s", server, e)
     send_sms("%s %s" % (server, e))
 
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-i', '--init', action='store_true',
-        help="Init database."
-    )
-    parser.add_argument(
-        '-q', '--query', action='store_true',
-        help="Query the running buckets."
-    )
+    parser.add_argument('-i',
+                        '--init',
+                        action='store_true',
+                        help="Init database.")
+    parser.add_argument('-q',
+                        '--query',
+                        action='store_true',
+                        help="Query the running buckets.")
     args = parser.parse_args()
 
     db = LOGERR(SQLITE_DB_PATH)
