@@ -29,6 +29,12 @@ SIZE_GC = (420 << 30)
 
 # gc record database
 
+def get_buckets(s):
+    try:
+        return get_bucket_all(s)
+    except Exception as e:
+        logging.info("get buckets failed for %s" % s)
+        return []
 
 class GCRecord(object):
     def __init__(self, path):
@@ -154,7 +160,7 @@ def gc_all_buckets(debug=False):
     servers = get_servers(IGNORED_SERVERS)
     buckets = []
     for s in servers:
-        for bkt in get_bucket_all(s):
+        for bkt in get_buckets(s):
             bkt_id = bkt["ID"]
             gcing = (bkt["HintState"] >= 4)
             if gcing:
@@ -246,7 +252,7 @@ def get_gc_stats_online(servers):
     buckets = dict()
     for s in servers:
         try:
-            for bkt in get_bucket_all(s):
+            for bkt in get_buckets(s):
                 bkt_id = bkt["ID"]
                 lastgc = bkt["LastGC"]
                 if lastgc:
