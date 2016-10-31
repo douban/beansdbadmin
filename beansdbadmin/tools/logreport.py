@@ -15,7 +15,7 @@ LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
 
 if getpass.getuser() in ("beansdb", "root"):
     SQLITE_DB_PATH = '/data/beansdbadmin/log_err.db'
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+    logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
 else:
     SQLITE_DB_PATH = './log_err.db'
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
@@ -34,7 +34,7 @@ PHONE_NUMS = {
 
 
 def send_sms(msg):
-    logging.debug("send sms: %s", msg)
+    logging.warn("send sms: %s", msg)
     if not has_sms:
         return
     os.environ['DOUBAN_PRODUCTION'] = '1'
@@ -99,7 +99,7 @@ def report_err(db, server, err):
         logging.debug("%s %s exist", server, ts)
     else:
         db.add(server, ts, err["Level"], err["File"], err["Line"], err["Msg"])
-        logging.debug("%s %s added", server, ts)
+        logging.warn("%s %s added", server, ts)
         send_sms(
             "%s %s %s %s %s" %
             (server, err["Level"], err["File"], err["Line"], err["Msg"][:100]))
@@ -114,7 +114,7 @@ def check_errs(db, server):
 
 
 def report_fail(server, e):
-    logging.debug("%s fail: %s", server, e)
+    logging.error("%s fail: %s", server, e)
     send_sms("%s %s" % (server, e))
 
 
