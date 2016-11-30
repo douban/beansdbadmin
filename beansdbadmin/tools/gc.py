@@ -8,6 +8,7 @@ from pprint import pprint
 from beansdb_tools.core.server_info import (get_http, get_bucket_all)
 
 from beansdbadmin.tools.filelock import FileLock
+from beansdbadmin import config
 from beansdbadmin.config import (
     IGNORED_SERVERS,
     get_servers as get_servers_from_zk
@@ -115,6 +116,7 @@ class GCRecord(object):
 
 def get_servers(exclude):
     exclude.extend(["chubb2", "chubb3"])
+    config.cluster = "db"
     servers = get_servers_from_zk()
     servers = [s for s in servers if s not in exclude]
     return servers
