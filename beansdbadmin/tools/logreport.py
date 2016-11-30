@@ -28,7 +28,6 @@ except:
 
 PHONE_NUMS = {
    "yangxiufeng": "15510084669" ,
-   "zhuzhaolong": "15844035661" ,
    "sunchaotang": "18612700632"
 }
 
