@@ -116,7 +116,7 @@ class GCRecord(object):
 
 def get_servers(exclude):
     exclude.extend(["chubb2", "chubb3"])
-    servers = get_servers_from_zk()
+    servers = get_servers_from_zk()[0]
     servers = [s for s in servers if s not in exclude]
     return servers
 
