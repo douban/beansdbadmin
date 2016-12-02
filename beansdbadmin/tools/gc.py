@@ -8,6 +8,7 @@ from pprint import pprint
 from beansdb_tools.core.server_info import (get_http, get_bucket_all)
 
 from beansdbadmin.tools.filelock import FileLock
+from beansdbadmin import config
 from beansdbadmin.config import (
     IGNORED_SERVERS,
     get_servers as get_servers_from_zk
@@ -123,6 +124,11 @@ def get_servers(exclude):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("-c",
+                        "--cluster",
+                        required=True,
+                        choices=['db', 'test'],
+                        help="cluster of beansdb")
     parser.add_argument('-d',
                         '--debug',
                         action='store_true',
@@ -149,6 +155,7 @@ def main():
     if args.query:
         pprint(gc_record.get_all())
         return
+    config.cluster = args.cluster  # use for get_servers_from_zk
 
     with FileLock(SQLITE_DB_PATH, timeout=10):
         if args.update_status:
