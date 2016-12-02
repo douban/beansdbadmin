@@ -116,7 +116,6 @@ class GCRecord(object):
 
 def get_servers(exclude):
     exclude.extend(["chubb2", "chubb3"])
-    config.cluster = "db"
     servers = get_servers_from_zk()
     servers = [s for s in servers if s not in exclude]
     return servers
@@ -125,6 +124,11 @@ def get_servers(exclude):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("-c",
+                        "--cluster",
+                        required=True,
+                        choices=['db', 'test'],
+                        help="cluster of beansdb")
     parser.add_argument('-d',
                         '--debug',
                         action='store_true',
@@ -151,6 +155,7 @@ def main():
     if args.query:
         pprint(gc_record.get_all())
         return
+    config.cluster = args.cluster  # use for get_servers_from_zk
 
     with FileLock(SQLITE_DB_PATH, timeout=10):
         if args.update_status:
