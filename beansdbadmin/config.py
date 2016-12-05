@@ -27,6 +27,5 @@ def get_proxies():
 def get_zk():
     global zk
     if zk is None:
-        print cluster
         zk = ZK(cluster)
     return zk
