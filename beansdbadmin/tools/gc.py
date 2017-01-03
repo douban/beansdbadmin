@@ -5,14 +5,12 @@ import time
 import sqlite3
 from pprint import pprint
 
-from beansdb_tools.core.server_info import (get_http, get_bucket_all)
+from beansdb_tools.core.server_info import (get_http, get_bucket_all, get_du)
 
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin import config
-from beansdbadmin.config import (
-    IGNORED_SERVERS,
-    get_servers as get_servers_from_zk
-)
+from beansdbadmin.config import (IGNORED_SERVERS, get_servers as
+                                 get_servers_from_zk)
 import logging
 
 logger = logging.getLogger('gc')
@@ -28,9 +26,10 @@ else:
     SQLITE_DB_PATH = './gobeansdb-gc.db'
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
-SIZE_GC = (420 << 30)
+DISK_GC = (70 << 30)
 
 # gc record database
+
 
 def get_buckets(s):
     try:
@@ -38,6 +37,15 @@ def get_buckets(s):
     except Exception as e:
         logging.info("get buckets failed for %s" % s)
         return []
+
+
+def get_disks(s):
+    try:
+        return get_du(s)
+    except Exception as e:
+        logging.info("get disks failed for %s" % s)
+        return {}
+
 
 class GCRecord(object):
     def __init__(self, path):
@@ -161,11 +169,12 @@ def main():
         if args.update_status:
             update_gc_status(gc_record)
             return
-        gc_all_buckets(args.debug)
+        choose_one_bucket_and_gc_it(args.debug)
 
 
-def gc_all_buckets(debug=False):
+def choose_one_bucket_and_gc_it(debug=False):
     servers = get_servers(IGNORED_SERVERS)
+    disks = []
     buckets = []
     for s in servers:
         for bkt in get_buckets(s):
@@ -175,14 +184,30 @@ def gc_all_buckets(debug=False):
                 if not debug:
                     logging.info("%s %s is gcing", s, bkt_id)
                     return
-            #lastgc = bkt["LastGC"]
-            du = bkt["DU"]
-            buckets.append((s, bkt_id, bkt, du))
+
+        for disk, disk_info in get_disks(s)["Disks"].iteritems():
+            disk_free = disk_info["Free"]
+            disk_buckets = disk_info["Buckets"]
+            if DISK_GC > disk_free > 0:
+                disks.append((s, disk_free, disk_buckets))
+
+    if not disks:
+        return
+    disks.sort(key=lambda x: x[1])
+    gc_disk = disks[0]
+    for bucket in gc_disk[-1]:
+        bucket_gc_files = get_gc_files(gc_disk[0], bucket)
+        if bucket_gc_files:
+            buckets.append((gc_disk[0], bucket, bucket_gc_files))
+
+    if not buckets:
+        msg = "server %s:beansdb takes too much disk space and is not cleard when autogc" % gc_disk[0]
+        logging.error(msg)
+        send_sms(msg)
+        return
     buckets.sort(key=lambda x: x[-1], reverse=True)
-    bkt = buckets[0]
-    # pprint(buckets)
-    if bkt[-1] > SIZE_GC:
-        gc_bucket(bkt[0], bkt[1], debug)
+    server, bucket, _ = buckets[0]
+    gc_bucket(server, bucket, debug)
 
 
 def get_status(gc):
@@ -268,6 +293,15 @@ def get_gc_stats_online(servers):
         except:
             pass
     return buckets
+
+
+def get_gc_files(server, bucket):
+    res = get_http(server, "/gc/%x" % int(bucket))
+    start, end, ok = parse_gc_resp(res)
+    if ok:
+        return end - start
+    else:
+        return 0
 
 
 def gc_bucket(server, bucket, debug=True):
