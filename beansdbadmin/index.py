@@ -34,7 +34,7 @@ def servers():
 
 @app.route('/buckets/')
 def buckets():
-    server_buckets = get_all_buckets_stats(2 if config.cluster == "fs" else 1)
+    server_buckets = get_all_buckets_stats(2)
     return tmpl('buckets.html', server_buckets=server_buckets)
 
 
