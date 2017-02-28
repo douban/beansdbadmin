@@ -5,15 +5,25 @@ from beansdb_tools.sa.cmdb import get_hosts_by_tag
 from beansdb_tools.core.server_info import (
     get_du, get_buffer_stat, get_bucket_all, get_config, get_lasterr_ts
 )
+from multiprocessing.dummy import Pool as ThreadPool
 from beansdb_tools.core.node import Node
 from beansdb_tools.core.client import DBClient
 from beansdbadmin.models.utils import get_start_time, big_num
 from beansdbadmin.config import get_servers
 
+
 def get_all_server_stats():
-    sis = [ServerInfo(host) for host in get_servers()[0]]
-    sis.sort(key=lambda x: (x.err is None, x.host))
-    return sis
+    pool = ThreadPool(8)
+    results = pool.map(gen_server_info, get_servers()[0])
+    pool.close()
+    pool.join()
+    results.sort(key=lambda x: (x.err is None, x.host))
+    return results
+
+
+def gen_server_info(host):
+    server_info = ServerInfo(host)
+    return server_info
 
 
 def get_all_buckets_stats(digit=2):
