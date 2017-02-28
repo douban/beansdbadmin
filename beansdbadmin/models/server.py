@@ -10,6 +10,7 @@ from beansdb_tools.core.node import Node
 from beansdb_tools.core.client import DBClient
 from beansdbadmin.models.utils import get_start_time, big_num
 from beansdbadmin.config import get_servers
+from functools import partial
 
 
 def get_all_server_stats():
@@ -27,7 +28,11 @@ def gen_server_info(host):
 
 
 def get_all_buckets_stats(digit=2):
-    buckets = [get_buckets_info(host, digit) for host in get_servers()[0]]
+    partial_get_buckets_info = partial(get_buckets_info, digit=digit)
+    pool = ThreadPool(8)
+    buckets = pool.map(partial_get_buckets_info, get_servers()[0])
+    pool.close()
+    pool.join()
     return [b for b in buckets if b is not None]
 
 
