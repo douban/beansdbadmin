@@ -14,6 +14,7 @@ except ImportError:
 zk = None
 cluster = "test"
 
+
 def get_servers():
     route = Route.from_zk(get_zk())
     addrs = route.main.keys()
@@ -21,8 +22,16 @@ def get_servers():
     backups = [x.split(":")[0] for x in route.backup]
     return servers, backups
 
+
 def get_proxies():
     return get_zk().proxies_get()
+
+
+def gc_block_buckets(host):
+    buckets = get_zk().gc_get_status(host)
+    buckets = [bucket.encode('utf-8') for bucket in buckets]
+    return buckets
+
 
 def get_zk():
     global zk
