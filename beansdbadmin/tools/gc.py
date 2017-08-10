@@ -9,7 +9,7 @@ from beansdb_tools.core.server_info import (get_http, get_bucket_all, get_du)
 
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin import config
-from beansdbadmin.config import (IGNORED_SERVERS, gc_block_buckets, gc_set, get_servers as
+from beansdbadmin.config import (IGNORED_SERVERS, gc_block_buckets, get_servers as
                                  get_servers_from_zk)
 import logging
 
