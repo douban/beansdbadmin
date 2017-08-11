@@ -34,7 +34,7 @@ def gc_block_buckets(host):
 
 
 def get_zk():
-    global zk
+    global zk, cluster
     if zk is None:
         zk = ZK(cluster)
     return zk

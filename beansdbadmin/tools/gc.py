@@ -9,8 +9,6 @@ from beansdb_tools.core.server_info import (get_http, get_bucket_all, get_du)
 
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin import config
-from beansdbadmin.config import (IGNORED_SERVERS, gc_block_buckets, get_servers as
-                                 get_servers_from_zk)
 import logging
 
 logger = logging.getLogger('gc')
@@ -124,7 +122,7 @@ class GCRecord(object):
 
 def get_servers(exclude):
     exclude.extend(["chubb2", "chubb3"])
-    servers = get_servers_from_zk()[0]
+    servers = config.get_servers()[0]
     servers = [s for s in servers if s not in exclude]
     return servers
 
@@ -173,7 +171,7 @@ def main():
 
 
 def choose_one_bucket_and_gc_it(debug=False):
-    servers = get_servers(IGNORED_SERVERS)
+    servers = get_servers(config.IGNORED_SERVERS)
     disks = []
     buckets = []
     for s in servers:
@@ -195,7 +193,7 @@ def choose_one_bucket_and_gc_it(debug=False):
         return
     disks.sort(key=lambda x: x[1])
     gc_disk = disks[0]
-    block_buckets = gc_block_buckets(gc_disk[0])
+    block_buckets = config.gc_block_buckets(gc_disk[0])
     for bucket in gc_disk[-1]:
         bkt = '{:02x}'.format(bucket)
         if bkt in block_buckets:
