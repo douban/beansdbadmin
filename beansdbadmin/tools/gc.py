@@ -196,7 +196,7 @@ def choose_one_bucket_and_gc_it(debug=False):
     block_buckets = config.gc_block_buckets(gc_disk[0])
     for bucket in gc_disk[-1]:
         bkt = '{:02x}'.format(bucket)
-        if bkt in block_buckets:
+        if block_buckets and bkt in block_buckets:
             continue
         bucket_gc_files = get_gc_files(gc_disk[0], bucket)
         if bucket_gc_files:
