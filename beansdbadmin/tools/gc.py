@@ -133,7 +133,7 @@ def main():
     parser.add_argument("-c",
                         "--cluster",
                         required=True,
-                        choices=['db', 'test'],
+                        choices=['db256', 'test'],
                         help="cluster of beansdb")
     parser.add_argument('-d',
                         '--debug',
