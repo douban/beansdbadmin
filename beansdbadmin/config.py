@@ -29,7 +29,8 @@ def get_proxies():
 
 def gc_block_buckets(host):
     buckets = get_zk().gc_get_status(host)
-    buckets = [bucket.encode('utf-8') for bucket in buckets]
+    if buckets:
+        buckets = [bucket.encode('utf-8') for bucket in buckets]
     return buckets
 
 
