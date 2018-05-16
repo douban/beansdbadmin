@@ -9,7 +9,7 @@
 新机房
 
   doubandb http://cotman1:5000/
-  doubanfs  http://cotman2:5010/
+  doubanfs  http://cotman1:5010/
 
 
 puppet 相关配置
