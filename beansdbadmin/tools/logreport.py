@@ -139,7 +139,7 @@ def main():
         pprint(db.get_all())
         return
 
-    server_ports = get_hosts_by_tag("gobeansdb_servers")
+    server_ports = get_hosts_by_tag("doubandb256_servers_bs")
     servers = [x.split(':')[0] for x in server_ports]
     #servers.append("rosa4h")
     for s in servers:
