@@ -24,7 +24,7 @@ else:
     SQLITE_DB_PATH = './gobeansdb-gc.db'
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
-DISK_GC = (70 << 30)
+DISK_GC = (400 << 30)
 
 # gc record database
 
