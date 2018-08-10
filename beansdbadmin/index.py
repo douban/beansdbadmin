@@ -1,4 +1,6 @@
 # coding: utf-8
+import os
+import beansdbadmin
 from flask import Flask
 from flask import render_template as tmpl
 
@@ -8,7 +10,10 @@ from beansdbadmin.models.server import (
 from beansdbadmin.models.proxy import Proxies
 import beansdbadmin.config as config
 
+
 app = Flask(__name__)
+module_path = os.path.dirname(beansdbadmin.__file__)
+app.template_folder = os.path.join(module_path, 'templates')
 
 
 @app.route('/')

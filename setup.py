@@ -14,8 +14,7 @@ setup(
     keywords='',
     author='Douban Inc.',
     author_email='platform@douban.com',
-    url='',
-    license='',
+    url='https://github.com/douban/beansdbadmin',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
@@ -24,8 +23,11 @@ setup(
         'beansdb-tools',
     ],
     dependency_links=[
-        "git+https://github.intra.douban.com/coresys/beansdb-tools.git@master#egg=beansdb-tools",
+        'git+https://github.intra.douban.com/coresys/beansdb-tools.git@master#egg=beansdb-tools',
     ],
-    tests_require=[
-    ],
+    entry_points={
+        'console_scripts': [
+            'beansdbadmin-server = beansdbadmin.index:main'
+        ],
+    }
 )
