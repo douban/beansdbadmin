@@ -1,0 +1,2 @@
+recursive-include beansdbadmin/templates *
+recursive-include beansdbadmin/static *
