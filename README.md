@@ -17,6 +17,12 @@ puppet 相关配置
 modules/beansdb/manifests/doubandb_admin.pp
 modules/beansdb/manifests/doubanfs_admin.pp
 
+## 安装与运行
+
+```shell
+pip install git+https://github.com/douban/beansdbadmin.git@master#egg=beansdbadmin
+beansdbadmin-server --cluster db256 --port 9999
+```
 
 ```
 sudo emerge flask
