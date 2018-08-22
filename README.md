@@ -21,6 +21,9 @@ modules/beansdb/manifests/doubanfs_admin.pp
 
 ```shell
 pip install git+https://github.com/douban/beansdbadmin.git@master#egg=beansdbadmin
+git clone https://github.intra.douban.com/coresys/beansdbadmin.git
+cd beansdbadmin
+python setup.py build_ext --inplace
 beansdbadmin-server --cluster db256 --port 9999
 ```
 

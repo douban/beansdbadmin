@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-# encoding: utf-8
+# coding: utf-8
 
 import time
+import logging
 import sqlite3
+import getpass
 from pprint import pprint
-
-from beansdb_tools.core.server_info import (get_http, get_bucket_all, get_du)
-
+from beansdbadmin.core.server_info import (get_http, get_bucket_all, get_du)
+from beansdbadmin.tools.logreport import send_sms
 from beansdbadmin.tools.filelock import FileLock
 from beansdbadmin import config
-import logging
 
 logger = logging.getLogger('gc')
 LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
-import getpass
 if getpass.getuser() in ("beansdb", "root"):
     LOG_FILENAME = '/var/log/beansdb-admin/gc.log'
     SQLITE_DB_PATH = '/opt/beansdbadmin/beansdbadmin/gobeansdb-gc.db'
@@ -34,6 +33,7 @@ def get_buckets(s):
         return get_bucket_all(s)
     except Exception as e:
         logging.info("get buckets failed for %s" % s)
+        logging.exception(e)
         return []
 
 
@@ -42,6 +42,7 @@ def get_disks(s):
         return get_du(s)
     except Exception as e:
         logging.info("get disks failed for %s" % s)
+        logging.exception(e)
         return {}
 
 
@@ -74,9 +75,13 @@ class GCRecord(object):
 
         logging.debug("insert %s %s %s", server, bucket, start_time)
         self.cursor.execute("""INSERT INTO gc_record
-                            (server, bucket, start_time, stop_time, start_id, stop_id, curr_id, size_released, size_broken, status)
+                            (server, bucket, start_time, stop_time,
+                            start_id, stop_id, curr_id, size_released,
+                            size_broken, status)
                             VALUES
-                            (:server, :bucket, :start_time, :stop_time, :start_id, :stop_id, :curr_id, :size_released, :size_broken, :status)
+                            (:server, :bucket, :start_time, :stop_time,
+                            :start_id, :stop_id, :curr_id, :size_released,
+                            :size_broken, :status)
                             """, {'server': server,
                                   'bucket': bucket,
                                   'start_time': start_time,
@@ -203,7 +208,8 @@ def choose_one_bucket_and_gc_it(debug=False):
             buckets.append((gc_disk[0], bucket, bucket_gc_files))
 
     if not buckets:
-        msg = "server %s:beansdb takes too much disk space and is not cleard when autogc" % gc_disk[0]
+        msg = "server %s:beansdb takes too much disk space \
+               and is not cleard when autogc" % gc_disk[0]
         logging.error(msg)
         send_sms(msg)
         return
@@ -252,8 +258,6 @@ def update_gc_status(db):
     servers = get_servers([])
     indb = get_most_recent_for_buckets(db)
     online = get_gc_stats_online(servers)
-    #pprint(indb)
-    #pprint(online)
 
     for bkt, old in indb.items():
         if bkt not in online:
@@ -292,7 +296,7 @@ def get_gc_stats_online(servers):
                 lastgc = bkt["LastGC"]
                 if lastgc:
                     buckets[(s, bkt_id)] = lastgc
-        except:
+        except Exception:
             pass
     return buckets
 
@@ -331,7 +335,7 @@ def get_sentence(s, key):
     try:
         n = int(s[:right])
         return n
-    except:
+    except Exception:
         return -3
 
 
@@ -344,7 +348,8 @@ def parse_gc_resp(resp):
 
 
 def test_parse_gc_resp():
-    success = "<a href='/bucket/2'> /bucket/2 </a> <p/><p/> bucket 2, start 197, end 201, merge false, pretend false <p/>"
+    success = "<a href='/bucket/2'> /bucket/2 </a> <p/><p/> \
+               bucket 2, start 197, end 201, merge false, pretend false <p/>"
     err = "<p> err : already running </p><a href='/gc/2'> 2 </a> <p/>"
     r = parse_gc_resp(success)
     if r != (197, 201, True):

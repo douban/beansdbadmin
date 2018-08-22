@@ -7,8 +7,9 @@ import getpass
 import json
 import os
 from pprint import pprint
-from beansdb_tools.sa.cmdb import get_hosts_by_tag
-from beansdb_tools.core.server_info import get_http
+from beansdbadmin.core.zookeeper import ZK
+from beansdbadmin.core.zkcli import get_servers
+from beansdbadmin.core.server_info import get_http
 
 logger = logging.getLogger('logerr')
 LOG_FORMAT = '%(asctime)s-%(name)s-%(levelname)s-%(message)s'
@@ -23,11 +24,11 @@ else:
 try:
     from sms_service_client import Sms, SMS_TYPE_PLATFORM, SMS_OPTION
     has_sms = True
-except:
+except Exception:
     has_sms = False
 
 PHONE_NUMS = {
-   "yangxiufeng": "15510084669" ,
+   "yangxiufeng": "15510084669",
    "zhaoyijun": "18610816751"
 }
 
@@ -128,6 +129,11 @@ def main():
                         '--query',
                         action='store_true',
                         help="Query the running buckets.")
+    parser.add_argument('-c',
+                        '--cluster',
+                        required=True,
+                        choices=['db256', 'fs', 'test'],
+                        help='zk')
     args = parser.parse_args()
 
     db = LOGERR(SQLITE_DB_PATH)
@@ -139,9 +145,7 @@ def main():
         pprint(db.get_all())
         return
 
-    server_ports = get_hosts_by_tag("doubandb256_servers_bs")
-    servers = [x.split(':')[0] for x in server_ports]
-    #servers.append("rosa4h")
+    servers = get_servers(ZK(args.cluster))
     for s in servers:
         try:
             check_errs(db, s)

@@ -1,0 +1,5 @@
+Flask==0.10.1
+libmc==1.1.0
+pyyaml==3.12
+kazoo==2.2.1
+mmh3==2.5.1

@@ -1,16 +1,13 @@
-
-OFFLINE_PROXIES = ['doubandbofflineproxy1:7905', 'doubandbofflineproxy2:7905']
-
-
-from beansdb_tools.core.zookeeper import ZK
-from beansdb_tools.core.route import Route
-from beansdb_tools.sa.cmdb import get_hosts_by_tag
-
+# coding: utf-8
+from beansdbadmin.core.zookeeper import ZK
+from beansdbadmin.core.route import Route
 try:
     from beansdbadmin.local_config import IGNORED_SERVERS
 except ImportError:
     IGNORED_SERVERS = []
 
+
+OFFLINE_PROXIES = ['doubandbofflineproxy1:7905', 'doubandbofflineproxy2:7905']
 zk = None
 cluster = "test"
 

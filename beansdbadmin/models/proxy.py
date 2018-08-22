@@ -2,16 +2,15 @@
 
 import json
 import libmc
+import urllib
 import socket
 import collections
 from operator import itemgetter
 
-from beansdb_tools.core.node import Node
-from beansdb_tools.utils import get_url_content
-
+from beansdbadmin.core.node import Node
 from beansdbadmin.models.utils import big_num, get_start_time, grouper
-
 from beansdbadmin.config import get_proxies
+from beansdbadmin.core.client import get_url_content
 
 PROXY_SERVER_PORT = 7905
 PROXY_WEB_PORT = 7908
@@ -130,5 +129,4 @@ class Proxies(object):
 
 if __name__ == '__main__':
     proxy = Proxies()
-    #print p.get_scores('rosa3g')
     print proxy.get_scores_summary()
