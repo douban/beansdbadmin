@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from beansdb_tools.sa.cmdb import get_hosts_by_tag
-from beansdb_tools.core.server_info import (
+from beansdbadmin.core.server_info import (
     get_du, get_buffer_stat, get_bucket_all, get_config, get_lasterr_ts
 )
 from multiprocessing.dummy import Pool as ThreadPool
-from beansdb_tools.core.node import Node
-from beansdb_tools.core.client import DBClient
+from beansdbadmin.core.node import Node
+from beansdbadmin.core.client import DBClient
 from beansdbadmin.models.utils import get_start_time, big_num
 from beansdbadmin.config import get_servers
 from functools import partial
@@ -50,7 +49,8 @@ class ServerInfo(object):
             self.config = get_config(host)
             self.route_version = web.get_route_version()
             self.numbucket = self.config['NumBucket']
-            self.buckets_id = [i for (i, v) in enumerate(self.config['Buckets'])
+            self.buckets_id = [i for (i, v)
+                               in enumerate(self.config['Buckets'])
                                if v == 1]
             self.du = get_du(self.host)
             self.buffer_stat = get_buffer_stat(self.host)
@@ -73,7 +73,7 @@ class ServerInfo(object):
             return [self.host,
                     "%s:7903" % (self.host),
                     "%s" % self.err
-                   ]
+                    ]
 
         start_time = get_start_time(int(self.stats['uptime']))
         rss = self.stats["rusage_maxrss"]
@@ -89,7 +89,7 @@ class ServerInfo(object):
                 big_num(mindisk, 4, 2),
                 start_time,
                 self.lasterr_ts,
-               ]
+                ]
 
 
 def summary_bucket(host, bkt, digit):
@@ -104,14 +104,14 @@ def summary_bucket(host, bkt, digit):
             bkt["Pos"]["Offset"],
             bkt["NextGCChunk"],
             hint_state,
-           ]
+            ]
 
 
 def get_buckets_info(host, digit):
     try:
         buckets = get_bucket_all(host)
         return [summary_bucket(host, bkt, digit) for bkt in buckets]
-    except:
+    except Exception:
         pass
 
 
@@ -147,8 +147,8 @@ class Bucket(object):
 
 def get_key_counts(mc, path, base=0):
     d = mc.get_dir("@" + path)
-    l = sorted(list(d.items()))
-    counts = [v[1] for (_, v) in l]
+    items = sorted(list(d.items()))
+    counts = [v[1] for (_, v) in items]
     return dict([(base + i, c) for (i, c) in enumerate(counts) if c > 0])
 
 
@@ -199,8 +199,6 @@ def testone():
     print si.summary_server()
     get_buckets_info(h)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     testone()
-    # testall()
-    # print get_all_buckets(256)

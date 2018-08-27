@@ -1,0 +1,67 @@
+backup: ['chubb2:7900', 'chubb3:7900']
+main:
+- addr: rosa1b:7900
+  buckets: ['3']
+- addr: rosa1c:7900
+  buckets: ['9']
+- addr: rosa1d:7900
+  buckets: [b, '7']
+- addr: rosa1e:7900
+  buckets: [c, '8']
+- addr: rosa1f:7900
+  buckets: ['1']
+- addr: rosa1g:7900
+  buckets: [d, '2']
+- addr: rosa1h:7900
+  buckets: [f, '0']
+- addr: rosa2a:7900
+  buckets: ['0']
+- addr: rosa2b:7900
+  buckets: [c]
+- addr: rosa2d:7900
+  buckets: [c, '6']
+- addr: rosa2e:7900
+  buckets: ['8', '2']
+- addr: rosa2f:7900
+  buckets: [a]
+- addr: rosa2g:7900
+  buckets: [d, '5']
+- addr: rosa2h:7900
+  buckets: [f, '6']
+- addr: rosa3a:7900
+  buckets: ['3', '1']
+- addr: rosa3b:7900
+  buckets: ['2']
+- addr: rosa3c:7900
+  buckets: [e]
+- addr: rosa3d:7900
+  buckets: ['6']
+- addr: rosa3e:7900
+  buckets: ['1', a]
+- addr: rosa3f:7900
+  buckets: [b, '9']
+- addr: rosa3g:7900
+  buckets: [d, '8']
+- addr: rosa3h:7900
+  buckets: [f]
+- addr: rosa4a:7900
+  buckets: [e, '9']
+- addr: rosa4b:7900
+  buckets: ['4']
+- addr: rosa4c:7900
+  buckets: [b, '4']
+- addr: rosa4d:7900
+  buckets: ['4']
+- addr: rosa4e:7900
+  buckets: ['7']
+- addr: rosa4f:7900
+  buckets: ['3']
+- addr: rosa4g:7900
+  buckets: [e]
+- addr: rosa2c:7900
+  buckets: ['7', '5']
+- addr: rosa1a:7900
+  buckets: [a, '0']
+- addr: rosa5b:7900
+  buckets: ['5']
+numbucket: 16

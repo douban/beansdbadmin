@@ -46,7 +46,7 @@ def buckets():
 @app.route('/sync/')
 def sync():
     bs = get_all_buckets_key_counts(256)
-    #bs = get_all_buckets_key_counts(256 if config.cluster=="fs" else 16)
+    # bs = get_all_buckets_key_counts(256 if config.cluster=="fs" else 16)
     return tmpl('sync.html', buckets=bs)
 
 
@@ -122,9 +122,10 @@ def main():
                         default=5000,
                         help="beansdbadmin agent port number.")
     parser.add_argument(
+        "-c",
         "--cluster",
         required=True,
-        choices=['db', 'fs', 'db256', 'test'],
+        choices=['fs', 'db256', 'test'],
         help="cluster name, will use zk config in /beansdb/<cluster>")
     args = parser.parse_args()
     config.cluster = args.cluster

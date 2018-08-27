@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 version = '0.1'
 
@@ -20,14 +20,21 @@ setup(
     zip_safe=False,
     install_requires=[
         'Flask==0.10.0',
-        'beansdb-tools',
+        'libmc==1.1.0',
+        'pyyaml==3.12',
+        'kazoo==2.2.1',
+        'mmh3==2.5.1',
     ],
-    dependency_links=[
-        'git+https://github.intra.douban.com/coresys/beansdb-tools.git@master#egg=beansdb-tools',
+    ext_modules=[
+        Extension('beansdbadmin.core.fnv1a', ['beansdbadmin/core/fnv1a.c']),
     ],
     entry_points={
         'console_scripts': [
-            'beansdbadmin-server = beansdbadmin.index:main'
+            'beansdbadmin-server = beansdbadmin.index:main',
+            'beansdb-admin-agent = beansdbadmin.core.agent:main',
+            'beansdb-agent-cli = beansdbadmin.core.agent_cli:main',
+            'beansdb-dump-data = beansdbadmin.core.data:main',
+            'beansdb-dump-hint = beansdbadmin.core.hint:dump_hint',
         ],
     }
 )
