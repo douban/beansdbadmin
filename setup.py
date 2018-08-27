@@ -31,10 +31,10 @@ setup(
     entry_points={
         'console_scripts': [
             'beansdbadmin-server = beansdbadmin.index:main',
-            'beansdb-admin-agent = beansdbadmin.core.agent:main',
-            'beansdb-agent-cli = beansdbadmin.core.agent_cli:main',
-            'beansdb-dump-data = beansdbadmin.core.data:main',
-            'beansdb-dump-hint = beansdbadmin.core.hint:dump_hint',
+            # 'beansdb-admin-agent = beansdbadmin.core.agent:main',
+            # 'beansdb-agent-cli = beansdbadmin.core.agent_cli:main',
+            # 'beansdb-dump-data = beansdbadmin.core.data:main',
+            # 'beansdb-dump-hint = beansdbadmin.core.hint:dump_hint',
         ],
     }
 )
