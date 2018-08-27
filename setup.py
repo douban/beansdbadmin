@@ -19,11 +19,11 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'Flask==0.10.0',
-        'libmc==1.1.0',
-        'pyyaml==3.12',
-        'kazoo==2.2.1',
-        'mmh3==2.5.1',
+        'Flask',
+        'libmc',
+        'pyyaml',
+        'kazoo',
+        'mmh3',
     ],
     ext_modules=[
         Extension('beansdbadmin.core.fnv1a', ['beansdbadmin/core/fnv1a.c']),
