@@ -31,6 +31,8 @@ setup(
     entry_points={
         'console_scripts': [
             'beansdbadmin-server = beansdbadmin.index:main',
+            'beansdb-gc = beansdbadmin.tools.gc:main',
+            'beansdb-logreport = beansdbadmin.tools.logreport:main',
             # 'beansdb-admin-agent = beansdbadmin.core.agent:main',
             # 'beansdb-agent-cli = beansdbadmin.core.agent_cli:main',
             # 'beansdb-dump-data = beansdbadmin.core.data:main',
