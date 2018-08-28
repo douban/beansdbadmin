@@ -21,31 +21,11 @@ else:
     SQLITE_DB_PATH = './log_err.db'
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
-try:
-    from sms_service_client import Sms, SMS_TYPE_PLATFORM, SMS_OPTION
-    has_sms = True
-except Exception:
-    has_sms = False
-
-PHONE_NUMS = {
-   "yangxiufeng": "15510084669",
-   "zhaoyijun": "18610816751"
-}
-
 
 def send_sms(msg):
+    # should be implemented by yourself
     logging.warn("send sms: %s", msg)
-    if not has_sms:
-        return
-    os.environ['DOUBAN_PRODUCTION'] = '1'
-
-    try:
-        for phone in PHONE_NUMS.itervalues():
-            Sms.send(SMS_TYPE_PLATFORM, phone, msg,
-                     SMS_OPTION.SKIP_IP_SPAM_CHECK
-                     | SMS_OPTION.SKIP_PHONE_SPAM_CHECK)
-    except Exception as e:
-        print e
+    return
 
 
 class LOGERR(object):
