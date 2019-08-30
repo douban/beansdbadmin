@@ -302,7 +302,7 @@ def get_gc_stats_online(servers):
 
 
 def get_gc_files(server, bucket):
-    res = get_http(server, "/gc/%x" % int(bucket))
+    res = get_http(server, "/gc/%02x" % int(bucket))
     start, end, ok = parse_gc_resp(res)
     if ok:
         return end - start
