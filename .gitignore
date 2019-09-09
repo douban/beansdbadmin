@@ -15,6 +15,7 @@
 dist
 build
 .idea/
+.vscode/
 
 instance
 production.py
