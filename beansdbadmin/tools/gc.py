@@ -74,7 +74,8 @@ class GCRecord(object):
             curr_id, size_released, size_broken, status):
 
         logging.debug("insert %s %s %s", server, bucket, start_time)
-        self.cursor.execute("""INSERT INTO gc_record
+        self.cursor.execute(
+            """INSERT INTO gc_record
                             (server, bucket, start_time, stop_time,
                             start_id, stop_id, curr_id, size_released,
                             size_broken, status)
@@ -82,16 +83,18 @@ class GCRecord(object):
                             (:server, :bucket, :start_time, :stop_time,
                             :start_id, :stop_id, :curr_id, :size_released,
                             :size_broken, :status)
-                            """, {'server': server,
-                                  'bucket': bucket,
-                                  'start_time': start_time,
-                                  'stop_time': stop_time,
-                                  'start_id': start_id,
-                                  'stop_id': stop_id,
-                                  'curr_id': curr_id,
-                                  'size_released': size_released,
-                                  'size_broken': size_broken,
-                                  'status': status})
+                            """, {
+                'server': server,
+                'bucket': bucket,
+                'start_time': start_time,
+                'stop_time': stop_time,
+                'start_id': start_id,
+                'stop_id': stop_id,
+                'curr_id': curr_id,
+                'size_released': size_released,
+                'size_broken': size_broken,
+                'status': status
+            })
         self.conn.commit()
 
     def update(self, id, stop_time, curr_id, size_released, size_broken,
@@ -102,22 +105,27 @@ class GCRecord(object):
             curr_id = :curr_id,
             size_released = :size_released,
             size_broken = :size_broken WHERE id = :id
-            """, {'status': status,
-                  'id': id,
-                  'stop_time': stop_time,
-                  'curr_id': curr_id,
-                  'size_released': size_released,
-                  'size_broken': size_broken})
+            """, {
+                'status': status,
+                'id': id,
+                'stop_time': stop_time,
+                'curr_id': curr_id,
+                'size_released': size_released,
+                'size_broken': size_broken
+            })
         self.conn.commit()
 
     def update_status(self, id, status):
         logging.debug("update status %s %s", id, status)
         stop_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        self.cursor.execute("""UPDATE gc_record SET status = :status,
+        self.cursor.execute(
+            """UPDATE gc_record SET status = :status,
                             stop_time = :stop_time WHERE id = :id
-                            """, {'status': status,
-                                  'id': id,
-                                  'stop_time': stop_time})
+                            """, {
+                'status': status,
+                'id': id,
+                'stop_time': stop_time
+            })
         self.conn.commit()
 
     def get_all(self, num=256 * 3 * 2):
@@ -233,25 +241,29 @@ def get_status(gc):
 
 
 def update_rec(db, bid, gc):
-    db.update(bid,
-              gc["EndTS"][:19],
-              gc["Src"],
-              gc["SizeReleased"],
-              gc["SizeBroken"],
-              get_status(gc), )
+    db.update(
+        bid,
+        gc["EndTS"][:19],
+        gc["Src"],
+        gc["SizeReleased"],
+        gc["SizeBroken"],
+        get_status(gc),
+    )
 
 
 def insert_rec(db, server, bucket, gc):
-    db.add(server,
-           bucket,
-           gc["BeginTS"][:19],
-           gc["EndTS"][:19],
-           gc["Begin"],
-           gc["End"],
-           gc["Src"],
-           gc["SizeReleased"],
-           gc["SizeBroken"],
-           get_status(gc), )
+    db.add(
+        server,
+        bucket,
+        gc["BeginTS"][:19],
+        gc["EndTS"][:19],
+        gc["Begin"],
+        gc["End"],
+        gc["Src"],
+        gc["SizeReleased"],
+        gc["SizeBroken"],
+        get_status(gc),
+    )
 
 
 def update_gc_status(db):
@@ -305,7 +317,7 @@ def get_gc_files(server, bucket):
     res = get_http(server, "/gc/%02x" % int(bucket))
     start, end, ok = parse_gc_resp(res)
     if ok:
-        return end - start
+        return end - start + 1
     else:
         return 0
 
@@ -350,6 +362,7 @@ def parse_gc_resp(resp):
 def test_parse_gc_resp():
     success = "<a href='/bucket/2'> /bucket/2 </a> <p/><p/> \
                bucket 2, start 197, end 201, merge false, pretend false <p/>"
+
     err = "<p> err : already running </p><a href='/gc/2'> 2 </a> <p/>"
     r = parse_gc_resp(success)
     if r != (197, 201, True):
