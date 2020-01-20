@@ -52,15 +52,19 @@ def get_disks_info(server_disks=None, host=None):
     disk_info = {}
     partitions = psutil.disk_partitions()
 
-    disks = [p.mountpoint for p in partitions if p.mountpoint != '/']
+    disks = [p.mountpoint for p in partitions if p.mountpoint.startswith('/data')]
     disk_buckets = get_disk_buckets(host)
     for d in disks:
-        disk_info[d] = {}
-        disk_info[d]['free_size'] = psutil.disk_usage(d).free
-        disk_info[d]['bucket_num'] = disk_buckets.get(d)
-        disk_info[d]['available'] = STATE_AVAILABLE  # default value and can be change
-        if server_disks and d in server_disks:
-            disk_info[d]['available'] = server_disks[d]['available']
+        try:
+            disk_info[d] = {}
+            disk_info[d]['free_size'] = psutil.disk_usage(d).free
+            disk_info[d]['bucket_num'] = disk_buckets.get(d)
+            disk_info[d]['available'] = STATE_AVAILABLE  # default value and can be change
+            if server_disks and d in server_disks:
+                disk_info[d]['available'] = server_disks[d]['available']
+        except Exception as e:
+            logger.warning(e)
+            continue
     return disk_info
 
 
