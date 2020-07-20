@@ -7,12 +7,12 @@ import yaml
 
 def get_server_conf(conf_dir):
     with open(os.path.join(conf_dir, "global.yaml")) as f:
-        gconf = yaml.load(f)
+        gconf = yaml.load(f, Loader=yaml.FullLoader)
 
     localpath = os.path.join(conf_dir, "local.yaml")
     if os.path.exists(localpath):
         with open(localpath) as f:
-            lconf = yaml.load(f)
+            lconf = yaml.load(f, Loader=yaml.FullLoader)
         return update_dict(gconf, lconf)
     else:
         return gconf
