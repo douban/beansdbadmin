@@ -81,7 +81,7 @@ class Route(object):
 
     @classmethod
     def from_yaml(cls, raw):
-        return Route(yaml.load(raw))
+        return Route(yaml.load(raw, Loader=yaml.FullLoader))
 
     @classmethod
     def from_zk(cls, zk):

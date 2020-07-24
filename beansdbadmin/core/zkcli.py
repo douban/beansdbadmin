@@ -42,7 +42,7 @@ def check_route(zk, servers, proxies, new_ver):
 def update_zk_from_file(cluster, path):
     zk = ZK(cluster)
     with open(path, 'r') as f:
-        table = yaml.load(f)
+        table = yaml.load(f, Loader=yaml.FullLoader)
         return zk.route_set(yaml.dump(table))
 
 

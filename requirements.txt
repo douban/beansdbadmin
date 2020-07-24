@@ -1,5 +1,5 @@
 Flask==1.0
 libmc==1.1.0
-pyyaml>=4.2b1
+pyyaml>=5.1
 kazoo==2.2.1
 mmh3==2.5.1
