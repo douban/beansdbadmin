@@ -1,4 +1,4 @@
-Flask==1.0
+Flask==2.3.2
 libmc==1.1.0
 pyyaml>=5.1
 kazoo==2.2.1
